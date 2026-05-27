@@ -10,28 +10,51 @@
 *)
 From Corelib Require Import PrimString PrimInt63.
 From Crane Require Extraction.
-From Crane Require Import Monads.ITree Monads.IODefs External.VectorDefs.
+From Crane Require Import Monads.ITree Monads.IODefs External.VectorDefs Utils.HMap Utils.HAList.
 
-From ITree Require Import Basics.
+From ITree Require Import Basics.Basics.
 
-From ExtLib Require Import Data.Monads.StateMonad.
+Import Basics.Monads.
 
-From Stdlib Require Import List.
+From ExtLib Require Import Structures.Monad Structures.Reducible.
+
+From Stdlib Require Import List Classes.EquivDec.
 Import ListNotations.
 
 Open Scope itree_scope.
 
+Variant TVar {K} (V : K -> Type) : Type -> Type :=
+| mk_tvar : forall (n : nat) (k : K), TVar V (V k).
+
+Definition tvar_key {K A} (V : K -> Type) (x : TVar V A) : K :=
+  match x with mk_tvar _ _ k => k end.
+
+(*
 Axiom TVar : Type -> Type.
 Axiom tvar_eq_dec : forall {A B} (t1 : TVar A) (t2 : TVar B),
   {existT _ _ t1 = existT _ _ t2} + {existT _ _ t1 <> existT _ _ t2}.
+*)
 
-Inductive tvarE : Type -> Type :=
-| NewTVar : forall {A}, A -> tvarE (TVar A)
-| ReadTVar : forall {A}, TVar A -> tvarE A
-| WriteTVar : forall {A}, TVar A -> A -> tvarE unit
-| BeginTransaction : tvarE unit
-| CommitTransaction : tvarE unit
-| AbortTransaction : tvarE unit.
+
+Inductive tvarE {K : Type} (V : K -> Type) : Type -> Type :=
+| NewTVar : forall (k : K), V k -> tvarE V (TVar V (V k))
+| ReadTVar : forall {A}, TVar V A -> tvarE V A
+| WriteTVar : forall {A}, TVar V A -> A -> tvarE V unit.
+
+(*
+| BeginTransaction : tvarE V unit
+| CommitTransaction : tvarE V unit
+| AbortTransaction : tvarE V unit.
+*)
+
+Arguments NewTVar {K} {V}.
+Arguments ReadTVar {K} {V} {A}.
+Arguments WriteTVar {K} {V} {A}.
+(*
+Arguments BeginTransaction {K} {V}.
+Arguments CommitTransaction {K} {V}.
+Arguments AbortTransaction {K} {V}.
+*)
 
 Inductive stmControlE : Type -> Type :=
 | Retry : stmControlE void.
@@ -42,8 +65,12 @@ Definition retry {E} `{stmControlE -< E} {A} : itree E A :=
 Crane Extract Inductive stmControlE => ""
   [ "stm::retry<%t0>()" ].
 
-Definition stmE := stmControlE +' tvarE.
+Definition stmE {K} (V : K -> Type) : Type -> Type := stmControlE +' tvarE V.
 Crane Extract Skip stmE.
+
+(* not entirely sure why this is required *)
+#[global] Instance tvarE_sub_stmE {K} (V : K -> Type) : tvarE V -< stmE V := inr1.
+#[global] Instance stmControlE_sub_stmE {K} (V : K -> Type) : stmControlE -< stmE V := inl1.
 
 (* Need to decide how to model parallelism,
     could be implicitly through holding onto a vector of scheduled ctrees and at each step choosing one to step.
@@ -54,7 +81,8 @@ Crane Extract Skip stmE.
  *)
 (* start with an empty log, and then perform log operations when intercepting tvarE events *)
 
-Definition atomically {E} `{tvarE -< E} {A} (t0 : itree stmE A) : itree E A :=
+(*
+Definition atomically {E} {K} {V : K -> Type} `{tvarE V -< E} {A} (t0 : itree (stmE V) A) : itree E A :=
   trigger BeginTransaction ;;
   (cofix _atomic t :=
     match observe t with
@@ -71,7 +99,7 @@ Definition atomically {E} `{tvarE -< E} {A} (t0 : itree stmE A) : itree E A :=
             (fun _ => trigger (BeginTransaction) ;; _atomic t0)
     end) t0.
 
-Definition orElse {A} (t1 t2 : itree stmE A) : itree stmE A :=
+Definition orElse {A} {K} {V : K -> Type} (t1 t2 : itree (stmE V) A) : itree (stmE V) A :=
   trigger BeginTransaction ;;
   (cofix _orElse t :=
     match observe t with
@@ -82,276 +110,139 @@ Definition orElse {A} (t1 t2 : itree stmE A) : itree stmE A :=
     | VisF (inr1 e) k => Vis (inr1 e) (fun x => _orElse (k x))
     | VisF (inl1 Retry) _ => trigger AbortTransaction ;; t2
     end) t1.
-
-
-From ExtLib Require Import Structures.Reducible.
-
-Section HMaps.
-
-  Context (K : Type) (V : K -> Type).
-  Context (map : Type).
-
-  Class HMap : Type :=
-  { empty  : map
-  ; add    : forall (k : K), V k -> map -> map
-  ; remove : K -> map -> map
-  ; lookup : forall (k : K), map -> option (V k)
-  ; union  : map -> map -> map
-  }.
-
-  Class HMapOk (M : HMap) : Type :=
-  { mapsto : forall (k : K), V k -> map -> Prop
-  ; mapsto_empty : forall k v, ~mapsto k v empty
-  ; mapsto_lookup : forall k v m, lookup k m = Some v <-> mapsto k v m
-  ; mapsto_add_eq : forall m k v, mapsto k v (add k v m)
-  ; mapsto_add_neq : forall m k v k', k <> k' -> forall v', (mapsto k' v' m <-> mapsto k' v' (add k v m))
-  ; mapsto_remove_eq : forall m k v, ~ mapsto k v (remove k m)
-  ; mapsto_remove_neq : forall m k k', k <> k' -> forall v', (mapsto k' v' m <-> mapsto k' v' (remove k m))
-  }.
-
-  Context `{M : HMap}.
-
-  Definition contains (k : K) (m : map) : bool :=
-    match lookup k m with
-    | None => false
-    | Some _ => true
-    end.
-
-  Definition singleton (k : K) (v : V k) : map :=
-    add k v empty.
-
-  Context {F : Foldable map (sigT V)}.
-
-  Definition combine (f : forall (k : K), V k -> V k -> V k) (m1 m2 : map) : map :=
-    fold (fun k_v acc =>
-      let '(existT _ k v) := k_v in
-      match lookup k acc with
-      | None => add k v acc
-      | Some v' => add k (f k v v') acc
-      end) m2 m1.
-
-  Definition filter (f : forall (k : K), V k -> bool) (m : map) : map :=
-    fold (fun k_v acc =>
-      let '(existT _ k v) := k_v in
-      if f k v
-      then add k v acc
-      else acc) empty m.
-
-End HMaps.
-
-Arguments empty {_} {_} {_} {_}.
-Arguments add {K V} {map} {HMap} _ _ _.
-Arguments remove {K V} {map} {HMap} _ _.
-Arguments lookup {K V} {map} {HMap} _ _.
-Arguments union {K V} {map} {HMap} _ _.
-Arguments contains {K V} {map} {M} _ _.
-Arguments singleton {K V} {map} {M} _ _.
-Arguments combine {K V} {map} {M} _ _ _ _.
-Arguments HMapOk {K V} {map} _.
-
-
-
-From Stdlib Require Import Classes.EquivDec.
-
-Section HAList.
-  Context (K : Type) (V : K -> Type).
-
-  Definition halist := list {k : K & V k}.
-
-  Context `{Eq : EqDec K eq}.
-
-  Definition halist_remove (k : K) (m : halist) : halist :=
-    List.filter (fun k_v => negb (proj1_sig (bool_of_sumbool (projT1 k_v == k)))) m.
-
-  Definition halist_add (k : K) (v : V k) (m : halist) : halist :=
-    existT _ k v :: halist_remove k m.
-
-  Fixpoint halist_lookup (k : K) (l : halist) : option (V k) :=
-    match l with
-    | [] => None
-    | (existT _ k' v :: l') =>
-      match k' == k with
-      | left e => Some (eq_rect k' V v k e)
-      | right _ => halist_lookup k l'
-      end
-    end.
-
-  Section fold.
-    Context {T : Type} (f : forall (k : K), V k -> T -> T).
-
-    Fixpoint fold_halist (acc : T) (map : halist) : T :=
-      match map with
-      | [] => acc
-      | (existT _ k v :: m) => fold_halist (f k v acc) m
-      end.
-  End fold.
-
-  Definition halist_union (m1 m2 : halist) : halist :=
-    fold_halist halist_add m2 m1.
-
-  #[global] Instance HMap_halist : HMap K V halist :=
-  { empty  := nil
-  ; add    := @halist_add
-  ; remove := @halist_remove
-  ; lookup := @halist_lookup
-  ; union  := @halist_union
-  }.
-
-  Section proofs.
-    Definition mapsto_halist (k : K) (v : V k) (m : halist) : Prop :=
-      halist_lookup k m = Some v.
-
-    Theorem mapsto_empty_halist : forall (k : K) (v : V k), ~ mapsto_halist k v empty.
-    Proof.
-      intros ?? H.
-      inversion H.
-    Qed.
-
-    Theorem mapsto_lookup_halist : forall (k : K) (v : V k) (m : halist),
-      lookup k m = Some v <-> mapsto_halist k v m.
-    Proof.
-      reflexivity.
-    Qed.
-
-    Theorem mapsto_remove_eq_halist : forall m k v, ~ mapsto_halist k v (halist_remove k m).
-    Proof.
-      intros m k v.
-      unfold mapsto_halist.
-      induction m.
-      - apply mapsto_empty_halist.
-      - destruct a. cbn.
-        destruct (x == k); [apply IHm|].
-        cbn.
-        destruct (x == k); [|apply IHm].
-        contradiction.
-    Qed.
-
-    Theorem mapsto_remove_neq_halist : forall m k k', k <> k' ->
-      forall v', (mapsto_halist k' v' m <-> mapsto_halist k' v' (halist_remove k m)).
-    Proof.
-      intros ??? Hneq ?.
-      unfold mapsto_halist.
-      induction m.
-      - reflexivity.
-      - destruct a.
-        cbn.
-        destruct (x == k) as [Heqk | Hneqk].
-        + cbn. rewrite <- IHm.
-          revert v.
-          rewrite Heqk.
-          destruct (k == k') as [Heqk' | _]; [exfalso; apply Hneq, Heqk'|reflexivity].
-        + cbn. destruct (x == k') as [? | ?]; [reflexivity|apply IHm].
-    Qed.
-
-    Theorem mapsto_add_eq_halist : forall m k v, mapsto_halist k v (halist_add k v m).
-    Proof.
-      intros.
-      unfold mapsto_halist.
-      cbn.
-      destruct (k == k) as [Heq | Hneq].
-      - rewrite <- Eqdep_dec.eq_rect_eq_dec; [reflexivity|assumption].
-      - exfalso. apply Hneq. reflexivity.
-    Qed.
-
-    Theorem mapsto_add_neq_halist : forall m k v k', k <> k' ->
-      forall v', (mapsto_halist k' v' m <-> mapsto_halist k' v' (halist_add k v m)).
-    Proof.
-      intros ???? Hneq ?.
-      unfold mapsto_halist.
-      cbn.
-      destruct (k == k') as [Heq | _].
-      - exfalso. apply Hneq, Heq.
-      - apply mapsto_remove_neq_halist, Hneq.
-    Qed.
-
-    #[global] Instance HMapOk_halist : HMapOk HMap_halist :=
-      {| mapsto := mapsto_halist
-       ; mapsto_empty := mapsto_empty_halist
-       ; mapsto_lookup := mapsto_lookup_halist
-       ; mapsto_add_eq := mapsto_add_eq_halist
-       ; mapsto_add_neq := mapsto_add_neq_halist
-       ; mapsto_remove_eq := mapsto_remove_eq_halist
-       ; mapsto_remove_neq := mapsto_remove_neq_halist
-      |}.
-    
-  End proofs.
-
-  #[global] Instance Foldable_halist : Foldable halist {k : K & V k} :=
-    fun _ f => fold_halist (fun k v => f (existT _ k v)).
-
-End HAList.
-
-
-
-(*Definition handle_tvars {E} : tvarE ~> stateT _ (itree E).*)
-
-Variant TVarEntry : Type := | TVarEnt {A} (t : TVar A) (v1 v2 : A).
-Definition tvar_log : Type := list TVarEntry.
-
-Definition read_tvar_log {E} `{tvarE -< E} {A} (t : TVar A) : tvar_log -> itree E (tvar_log * A) :=
-  fix _read_tvar_log l :=
-    match l with
-    | [] => v <- trigger (ReadTVar t) ;; Ret ([TVarEnt t v v], v)
-    | (TVarEnt t' v1 v2 :: l') =>
-        match tvar_eq_dec t' t with
-        | left p =>
-            match p in (_ = s0) return (itree E (tvar_log * projT1 s0)) with
-            | eq_refl => Ret (l, v2)
-            end
-        | right _ =>
-            '(l'', v) <- _read_tvar_log l' ;;
-            Ret (TVarEnt t' v1 v2 :: l'', v)
-        end
-    end.
-
-Definition write_tvar_log {E} `{tvarE -< E} {A} (t : TVar A) (v : A) : tvar_log -> itree E tvar_log :=
-  fix _write_tvar_log l :=
-    match l with
-    | [] => v' <- trigger (ReadTVar t) ;; Ret (TVarEnt t v' v :: l)
-    | (TVarEnt t' v1 v2 :: l') =>
-        match tvar_eq_dec t t' with 
-        | left p =>
-            Ret (TVarEnt t' v1 (match p in (_ = s0) return (projT1 s0) with eq_refl => v end) :: l')
-        | right _ =>
-            l'' <- _write_tvar_log l' ;;
-            Ret (TVarEnt t' v1 v2 :: l'')
-        end
-    end.
-
-(*
-Fixpoint verify_log {E} `{tvarE -< E} (l : tvar_log) : itree E bool :=
-  match l with
-  | [] => Ret true
-  | (TVarEnt t v1 _ :: l') =>
-    v1' <- trigger (ReadTVar t) ;;
-    if eqb v1 v1'
-    then verify_log l'
-    else Ret false
-  end.
 *)
 
-Fixpoint commit_log {E} `{tvarE -< E} (l : tvar_log) : itree E unit :=
+
+
+
+
+
+Definition pkey (J K : Type) := (J * K)%type.
+Definition pkey_type {J K} (V : K -> Type) (pk : pkey J K) := V (snd pk). 
+Definition nat_key := pkey nat.
+Definition nat_key_type {K} (V : K -> Type) (nk : nat_key K) := V (snd nk).
+
+Definition commit_log {K} (V : K -> Type) {M} `{Foldable M (sigT (nat_key_type V))} {E} `{H : tvarE V -< E} : M -> itree E unit :=
+  fold (fun '(existT _ (n, k) v) acc => Vis (subevent (H := H) _ (WriteTVar (mk_tvar V n k) v)) (fun _ => acc)) (Ret tt).
+
+
+Definition handle_tvar_log {K} {V : K -> Type} {M} `{HMap (nat_key K) (nat_key_type V) M} {E} `{H : tvarE V -< E}
+  (m : M) : forall {A}, tvarE V A -> itree E (A * M) :=
+  fun _ t =>
+    match t with
+    | NewTVar _ _ => ITree.spin
+    | ReadTVar tv =>
+        (let '(mk_tvar _ n k) in TVar _ T := tv return TVar V T -> itree E (T * M) in
+          match lookup (n, k) m with
+          | Some v => fun _ => Ret (v, m)
+          | None => fun tv => Vis (subevent (H := H) _ (ReadTVar tv)) (fun v => Ret (v, m))
+          end) tv
+    | WriteTVar (mk_tvar _ n k) v => Ret (tt, add (n, k) v m)
+    end.
+
+
+Variant atomicE E : Type -> Type :=
+| Atomic : forall {A} (t : itree E A), atomicE E A.
+
+CoFixpoint atomically {K} {V : K -> Type} `{EqDec K eq} {E} `{tvarE V -< E} `{atomicE (tvarE V) -< E} {A} (t0 : itree (stmE V) A) : itree E A :=
+  Vis (subevent _ (Atomic _
+      ((cofix _atomic (m : halist (pkey nat K) (pkey_type V)) t :=
+        match observe t with
+        | RetF a =>
+            commit_log V m ;;
+            Ret (Some a)
+        | TauF t => Tau (_atomic m t)
+        | VisF (inr1 e) k => '(x, m) <- handle_tvar_log m e ;; Tau (_atomic m (k x))
+        | VisF (inl1 Retry) _ => Ret None
+        end) empty t0)))
+    (fun oa =>
+      match oa with
+      | Some a => Ret a
+      | None => atomically t0
+      end).
+
+Definition orElse {A} {K} {V : K -> Type} `{EqDec K eq} (t1 t2 : itree (stmE V) A) : itree (stmE V) A :=
+  (cofix _orElse (m : halist (nat_key K) (nat_key_type V)) t :=
+    match observe t with
+    | RetF a =>
+        commit_log V m ;;
+        Ret a
+    | TauF t => Tau (_orElse m t)
+    | VisF (inr1 e) k => '(x, m) <- handle_tvar_log m e ;; Tau (_orElse m (k x))
+    | VisF (inl1 Retry) _ => t2
+    end) empty t1.
+
+Definition handle_tvars {E} {K} `{EqDec K eq} (V : K -> Type) :
+  tvarE V ~> stateT (halist (nat_key K) (nat_key_type V)) (itree E) :=
+  fun _ t m =>
+    match t with
+    | NewTVar _ _ => ITree.spin
+    | ReadTVar x =>
+        let '(mk_tvar _ n k) := x in
+        match lookup (n, k) m with
+        | Some v => Ret (m, v)
+        | None => ITree.spin
+        end
+    | WriteTVar x v =>
+        (let '(mk_tvar _ n k) := x in
+         fun (v : V k) => Ret (add (n, k) v m, tt)) v
+    end.
+
+Variant forkE : Type -> Type :=
+| Fork : forkE bool.
+
+Variant scheduleE : Type -> Type :=
+| Schedule (n : nat) : scheduleE {m : nat | m < n}.
+
+Fixpoint signth {A} (l : list A) (n : {m : nat | m < length l}) : A :=
+  match l, n with
+  | [], exist _ m H => False_rect _ (PeanoNat.Nat.nlt_0_r m H)
+  | (v :: l), exist _ m H =>
+    match m with
+    | 0 => fun _ => v
+    | S m => fun H : S m < S (length l) => signth l (exist _ m (PeanoNat.lt_S_n _ _ H))
+    end H
+  end.
+
+CoFixpoint schedule {E F} `{F -< E} (l : list (itree (atomicE F +' forkE +' E) unit)) : itree (scheduleE +' E) unit :=
   match l with
   | [] => Ret tt
-  | (TVarEnt t _ v2 :: l') =>
-    trigger (WriteTVar t v2) ;;
-    commit_log l'
+  | _ =>
+    Vis (subevent _ (Schedule (length l)))
+        (fun n =>
+          let l1 := firstn (proj1_sig n) l in
+          let l2 := skipn (S (proj1_sig n)) l in
+          let t := signth l n in
+          match observe t with
+          | RetF _ => schedule (l1 ++ l2)
+          | TauF t => schedule (l1 ++ [t] ++ l2)
+          | VisF (inl1 e) k =>
+              match e, k with
+              | Atomic _ t, k => a <- translate subevent t ;; schedule (l1 ++ [k a] ++ l2)
+              end
+          | VisF (inr1 (inl1 e)) k =>
+              match e, k with
+              | Fork, k => schedule (l1 ++ [k true; k false] ++ l2)
+              end
+          | VisF (inr1 (inr1 e)) k => Vis (subevent _ e) (fun x => schedule (l1 ++ [k x] ++ l2))
+          end)
   end.
 
 
-Definition newTVar {E} `{tvarE -< E} {A} (a : A) : itree E (TVar A) := embed (NewTVar a).
-Definition readTVar {E} `{tvarE -< E} {A} (v : TVar A) : itree E A := embed (ReadTVar v).
-Definition writeTVar {E} `{tvarE -< E} {A} (v : TVar A) (a : A) : itree E unit := embed (WriteTVar v a).
+
+Definition newTVar {E K V} `{tvarE V -< E} (k : K) (a : V k) : itree E (TVar V (V k)) := embed (NewTVar k a).
+Definition readTVar {E K} {V : K -> Type} `{tvarE V -< E} {A} (v : TVar V A) : itree E A := embed (ReadTVar v).
+Definition writeTVar {E K} {V : K -> Type} `{tvarE V -< E} {A} (v : TVar V A) (a : A) : itree E unit := embed (WriteTVar v a).
 
 Crane Extract Inlined Constant atomically => "stm::atomically([&] { return %a0; })".
 Crane Extract Inlined Constant orElse => "stm::orElse<%t0>(%a0, %a1)".
 Crane Extract Inlined Constant retry => "stm::retry<%t0>()".
-Crane Extract Inlined Constant newTVar => "stm::newTVar(%a0)".
+Crane Extract Inlined Constant newTVar => "stm::newTVar(%a1)".
 
-Definition check (b : bool) : itree stmE unit :=
+Definition check {K} {V : K -> Type} (b : bool) : itree (stmE V) unit :=
   if b then Ret tt else retry.
 
-Definition modifyTVar {A : Type} (a : TVar A) (f : A -> A) : itree stmE unit :=
+Definition modifyTVar {K} {V : K -> Type} {A : Type} (a : TVar V A) (f : A -> A) : itree (stmE V) unit :=
   val <- readTVar a ;;
   writeTVar a (f val) ;;
   Ret tt.
