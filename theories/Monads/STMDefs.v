@@ -12,7 +12,7 @@ From Corelib Require Import PrimString PrimInt63.
 From Crane Require Extraction.
 From Crane Require Import Monads.ITree Monads.IODefs External.VectorDefs Utils.HMap Utils.HAList.
 
-From ITree Require Import Basics.Basics Basics.CategoryOps.
+From ITree Require Import Basics.Basics Basics.CategoryOps Basics.CategoryKleisli Indexed.Function Indexed.Sum Core.Subevent Interp.Interp.
 
 
 
@@ -120,7 +120,7 @@ Definition orElse {A} {K} {V : K -> Type} (t1 t2 : itree (stmE V) A) : itree (st
 
 
 Definition pkey (J K : Type) := (J * K)%type.
-Definition pkey_type {J K} (V : K -> Type) (pk : pkey J K) := V (snd pk). 
+Definition pkey_type {J K} (V : K -> Type) (pk : pkey J K) := V (snd pk).
 Definition nat_key := pkey nat.
 Definition nat_key_type {K} (V : K -> Type) (nk : nat_key K) := V (snd nk).
 
@@ -142,26 +142,67 @@ Definition handle_tvar_log {K} {V : K -> Type} {M} `{HMap (nat_key K) (nat_key_t
     | WriteTVar (mk_tvar _ n k) v => Ret (tt, add (n, k) v m)
     end.
 
-
 Variant atomicE E : Type -> Type :=
 | Atomic : forall {A} (t : itree E A), atomicE E A.
 
-CoFixpoint atomically {K} {V : K -> Type} `{EqDec K eq} {E} `{tvarE V -< E} `{atomicE (tvarE V) -< E} {A} (t0 : itree (stmE V) A) : itree E A :=
-  Vis (subevent _ (Atomic _
-      ((cofix _atomic (m : halist (pkey nat K) (pkey_type V)) t :=
-        match observe t with
-        | RetF a =>
-            commit_log V m ;;
-            Ret (Some a)
-        | TauF t => Tau (_atomic m t)
-        | VisF (inr1 e) k => '(x, m) <- handle_tvar_log m e ;; Tau (_atomic m (k x))
-        | VisF (inl1 Retry) _ => Ret None
-        end) HMap.empty t0)))
-    (fun oa =>
-      match oa with
-      | Some a => Ret a
-      | None => atomically t0
-      end).
+Arguments Atomic {E} {A} (_).
+
+Variant runStmE {K} (V : K -> Type) : Type -> Type :=
+| Atomically : forall {A} (t : itree (stmE V) A), runStmE V A.
+
+Arguments Atomically {K} {V} {A} (t).
+
+Definition atomically {K} {V : K -> Type} {E} `{runStmE V -< E} {A} (t : itree (stmE V) A) : itree E A :=
+  trigger (Atomically t).
+
+Variant transactionE E : Type -> Type :=
+| Transaction : forall {A}, itree E A -> transactionE E (option A).
+
+Arguments Transaction {E} {A} (_).
+
+Definition h_atomically {K} {V : K -> Type} {E} `{transactionE (stmE V) -< E} : runStmE V ~> itree E :=
+  fun _ e =>
+    match e with
+    | Atomically t =>
+        ITree.iter (fun _ =>
+                      oa <- trigger (Transaction t) ;;
+                      match oa with
+                      | None => Ret (inl tt)
+                      | Some a => Ret (inr a)
+                      end) tt
+    end.
+
+
+
+From ITree Require Import Events.FailFacts.
+
+
+
+Definition h_stm_write_log {K} {V : K -> Type} {M} `{HMap (nat_key K) (nat_key_type V) M} {E} `{tvarE V -< E}:
+  stmE V ~> stateT M (failT (itree E)) :=
+  fun _ e m =>
+    match e with
+    | inl1 Retry => Ret None
+    | inr1 e =>
+        '(a, m) <- handle_tvar_log m e ;;
+        Ret (Some (m, a))
+    end.
+
+(* assumes that we can atomically execute transacitons, ** NOT (in general) TRUE ** *)
+Definition atomic_transactions {K} {V : K -> Type} `{EqDec K eq}: transactionE (stmE V) ~> atomicE (tvarE V) :=
+  fun _ e =>
+    match e with
+    | Transaction t =>
+        let m : stateT (halist (pkey nat K) (pkey_type V)) (failT (itree (tvarE V))) _ :=
+          interp h_stm_write_log t in
+        Atomic (oma <- m [] ;;
+                match oma with
+                | Some (m, a) =>
+                    commit_log _ m ;;
+                    Ret (Some a)
+                | None => Ret None
+                end)
+    end.
 
 Definition orElse {A} {K} {V : K -> Type} `{EqDec K eq} (t1 t2 : itree (stmE V) A) : itree (stmE V) A :=
   (cofix _orElse (m : halist (nat_key K) (nat_key_type V)) t :=
@@ -173,6 +214,98 @@ Definition orElse {A} {K} {V : K -> Type} `{EqDec K eq} (t1 t2 : itree (stmE V) 
     | VisF (inr1 e) k => '(x, m) <- handle_tvar_log m e ;; Tau (_orElse m (k x))
     | VisF (inl1 Retry) _ => t2
     end) HMap.empty t1.
+
+
+
+Variant tl2E {K} (V : K -> Type) : Type -> Type :=
+| GetVersionClock : tl2E V nat
+| IncVersionClock : tl2E V nat
+| NewTVarTL2 : forall (k : K), V k -> tl2E V (TVar V (V k))
+| ReadTVarTL2 : forall {A}, TVar V A -> tl2E V (A * nat * bool)
+| WriteTVarTL2 : forall {A}, TVar V A -> A -> nat -> tl2E V unit
+| TryLockTVar : forall {A}, TVar V A -> tl2E V bool
+| UnlockTVar : forall {A}, TVar V A -> tl2E V unit.
+
+Arguments GetVersionClock {K} {V}.
+Arguments IncVersionClock {K} {V}.
+Arguments NewTVarTL2 {K} (V) (_ _).
+Arguments ReadTVarTL2 {K} {V} {A} (_).
+Arguments WriteTVarTL2 {K} {V} {A} (_ _ _).
+Arguments TryLockTVar {K} {V} {A} (_).
+Arguments UnlockTVar {K} {V} {A} (_).
+
+From Stdlib Require Import Arith.PeanoNat Bool.Bool.
+From ExtLib Require Import Data.List.
+
+
+
+Definition handle_tvar_log_tl2 {K} {V : K -> Type} {M} `{HMap (nat_key K) (nat_key_type V) M} {E} `{H : tl2E V -< E}
+  (rv : nat) : stmE V ~> stateT (list (pkey nat K) * M) (failT (itree E)) :=
+  fun _ t '(s_r, m_w) =>
+    match t with
+    | inl1 Retry => Ret None
+    | inr1 e =>
+      match e with
+      | NewTVar _ _ => ITree.spin (* error for now, need to figure out how to deal with these *)
+      | ReadTVar tv =>
+          (let '(mk_tvar _ n k) in TVar _ T := tv return TVar V T -> itree E (option ((list (pkey nat K) * M) * T)) in
+            match lookup (n, k) m_w with
+            | Some v => fun _ => Ret (Some ((s_r, m_w), v))
+            | None => fun tv =>
+                '(v, ver, l) <- Vis (subevent (H := H) _ (ReadTVarTL2 tv)) (fun x => Ret x);;
+                if l || (rv <? ver)
+                then Ret None
+                else Ret (Some (((n, k) :: s_r, m_w), v))
+            end) tv
+      | WriteTVar (mk_tvar _ n k) v => Ret (Some ((s_r, add (n, k) v m_w), tt))
+      end
+    end.
+
+Definition write_tl2 {K} (V : K -> Type) {E} `{tl2E V -< E} (n : nat) (k : K) (v : V k) (wv : nat): itree E unit :=
+  trigger (WriteTVarTL2 (mk_tvar V n k) v wv).
+
+Definition tl2 {K} {V : K -> Type} `{EqDec K eq} {E} `{tl2E V -< E} : transactionE (stmE V) ~> itree E :=
+  fun A e =>
+    match e with
+    | Transaction t0 =>
+        (* sample global version-clock *)
+        rv <- trigger GetVersionClock ;;
+        (* run through a speculative execution *)
+        let m : stateT (_ * halist (pkey nat K) (pkey_type V)) (failT (itree E)) _ :=
+          interp (handle_tvar_log_tl2 rv) t0 in
+        res <- m ([], []) ;;
+        match res with
+        | None => Ret None
+        | Some ((s_r, m_w), a) =>
+            (* lock the write-set *)
+            have_locks <- fold (fun '(existT _ (n, k) _) t =>
+                                  lock <- trigger (TryLockTVar (mk_tvar V n k)) ;;
+                                  if (lock : bool) then t else Ret false)
+                               (Ret true) m_w ;;
+            if negb have_locks
+            then Ret None
+            else
+            (* increment the global version-clock *)
+            wv <- trigger IncVersionClock ;;
+            (* validate the read-set *)
+            validated <- fold (fun '(n, k) t =>
+                                '(_, ver, l) <- trigger (ReadTVarTL2 (mk_tvar V n k)) ;;
+                                if l || (rv <? ver)
+                                then Ret false
+                                else t)
+                              (Ret true) s_r ;;
+            if negb validated
+            then Ret None
+            else
+            (* commit and release the locks *)
+            fold (fun '(existT _ p v) t =>
+                          trigger (WriteTVarTL2 (mk_tvar V (fst p) (snd p)) v wv) ;;
+                          trigger (UnlockTVar (mk_tvar V (fst p) (snd p))) ;;
+                          t)
+                 (Ret tt) m_w ;;
+            Ret (Some a)
+        end
+    end.
 
 Definition handle_tvars {E} {K} `{EqDec K eq} (V : K -> Type) :
   tvarE V ~> stateT (halist (nat_key K) (nat_key_type V)) (itree E) :=
@@ -227,7 +360,7 @@ CoFixpoint schedule {E F} `{F -< E} (l : list (itree (atomicE F +' forkE +' E) u
           | TauF t => schedule (l1 ++ l2 ++ [t])
           | VisF (inl1 e) k =>
               match e, k with
-              | Atomic _ t, k => a <- translate subevent t ;; schedule (l1 ++ l2 ++ [k a])
+              | Atomic t, k => a <- translate subevent t ;; schedule (l1 ++ l2 ++ [k a])
               end
           | VisF (inr1 (inl1 e)) k =>
               match e, k with
@@ -275,7 +408,7 @@ Section example.
     writeTVar x0 v1 ;;
     writeTVar x1 (v0 + v1).
 
-  Definition fib (n : nat) : itree (atomicE (tvarE nats) +' forkE +' tvarE nats) unit :=
+  Definition fib (n : nat) : itree (runStmE nats +' forkE +' tvarE nats) unit :=
     x <- newTVar tt 0 ;;
     y <- newTVar tt 1 ;;
     (fix fib_ n :=
@@ -284,8 +417,18 @@ Section example.
       | S n => fork (atomically (fib_trans x y)) (fib_ n)
       end) n.
 
-  Definition run_concurrent {K} `{EqDec K eq} (V : K -> Type) (t : itree (atomicE (tvarE V) +' forkE +' tvarE V) unit) : itree void1 (halist _ _ * unit) :=
-    let s : stateT _ _ _ := interp (handle_tvars V) (schedule_rr [t]) in
+
+
+  Definition run_atomically {K} {V : K -> Type} {E A} (t0 : itree (runStmE V +' E) A):
+    itree (transactionE (stmE V) +' E) A :=
+    interp (bimap h_atomically (id_ _)) t0.
+
+
+  Definition run_atomic_transactions {K} `{EqDec K eq} {V : K -> Type}
+    (t1 : itree (transactionE (stmE V) +' forkE +' tvarE V) unit)
+    : itree void1 (halist (nat_key K) (nat_key_type V) * unit) :=
+    let t2 := translate (bimap atomic_transactions (id_ (forkE +' tvarE V))) t1 in
+    let s : stateT _ _ _ := interp (handle_tvars V) (schedule_rr [t2]) in
     s HMap.empty.
 
   Definition force {E A} (n : nat) (t : itree E A) : option A :=
@@ -297,7 +440,7 @@ Section example.
   Definition unwrap {E A} : option A -> itree E A :=
     fun o => match o with None => ITree.spin | Some a => Ret a end.
 
-  Compute (force 1000 (run_concurrent nats (fib 8))).
+  Compute (force 1000 (run_atomic_transactions (run_atomically (fib 8)))).
 
   Definition takeMVar {K} {V : K -> Type} {A} (t : TVar V (option A)) : itree (stmE V) A :=
     v <- readTVar t ;;
@@ -312,7 +455,7 @@ Section example.
     | None => writeTVar t (Some a)
     | Some _ => retry
     end.
-  
+
   Inductive Types :=
   | Nat : Types
   | Opt : Types -> Types.
@@ -329,14 +472,15 @@ Section example.
     | Opt t => option (Types_Type t)
     end.
 
-  Definition message_passing : itree (atomicE (tvarE Types_Type) +' forkE +' tvarE Types_Type) unit :=
+  Definition message_passing : itree (runStmE Types_Type +' forkE +' tvarE Types_Type) unit :=
     mv <- newTVar (Opt Nat) None ;;
     done <- newTVar Nat 0 ;;
     fork (v1 <- atomically (takeMVar mv) ;; v2 <- atomically (takeMVar mv) ;; atomically (putMVar mv (v1 + v2)))
          (atomically (putMVar mv 3) ;; atomically (putMVar mv 4) ;; atomically (r <- takeMVar mv ;; writeTVar done r)).
 
-  Compute (force 100 (run_concurrent Types_Type message_passing)).
+  Compute (force 100 (run_atomic_transactions (run_atomically message_passing))).
 
+  (* TODO: tests with orElse *)
 
 End example.
 
