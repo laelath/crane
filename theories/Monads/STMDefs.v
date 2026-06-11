@@ -12,6 +12,8 @@ From Corelib Require Import PrimString PrimInt63.
 From Crane Require Extraction.
 From Crane Require Import Monads.ITree Monads.IODefs External.VectorDefs Utils.HMap Utils.HAList.
 
+
+
 From ITree Require Import
   Basics.Basics
   Basics.CategoryOps
@@ -31,21 +33,17 @@ From ExtLib Require Import Data.List Structures.Monad Structures.Reducible.
 
 From Stdlib Require Import List Classes.EquivDec Arith.PeanoNat Bool.Bool.
 
+From Crane Require Import Mergesort.
+
 Import ListNotations.
 
 Open Scope itree_scope.
 
+
+
 Variant TVar {K} (V : K -> Type) : Type -> Type :=
 | mk_tvar : forall (n : nat) (k : K), TVar V (V k).
 
-Definition tvar_key {K A} (V : K -> Type) (x : TVar V A) : K :=
-  match x with mk_tvar _ _ k => k end.
-
-(*
-Axiom TVar : Type -> Type.
-Axiom tvar_eq_dec : forall {A B} (t1 : TVar A) (t2 : TVar B),
-  {existT _ _ t1 = existT _ _ t2} + {existT _ _ t1 <> existT _ _ t2}.
-*)
 
 
 Inductive tvarE {K : Type} (V : K -> Type) : Type -> Type :=
@@ -53,20 +51,11 @@ Inductive tvarE {K : Type} (V : K -> Type) : Type -> Type :=
 | ReadTVar : forall {A}, TVar V A -> tvarE V A
 | WriteTVar : forall {A}, TVar V A -> A -> tvarE V unit.
 
-(*
-| BeginTransaction : tvarE V unit
-| CommitTransaction : tvarE V unit
-| AbortTransaction : tvarE V unit.
-*)
-
 Arguments NewTVar {K} {V}.
 Arguments ReadTVar {K} {V} {A}.
 Arguments WriteTVar {K} {V} {A}.
-(*
-Arguments BeginTransaction {K} {V}.
-Arguments CommitTransaction {K} {V}.
-Arguments AbortTransaction {K} {V}.
-*)
+
+
 
 Inductive stmControlE : Type -> Type :=
 | Retry : stmControlE void.
@@ -84,49 +73,6 @@ Crane Extract Skip stmE.
 #[global] Instance tvarE_sub_stmE {K} (V : K -> Type) : tvarE V -< stmE V := inr1.
 #[global] Instance stmControlE_sub_stmE {K} (V : K -> Type) : stmControlE -< stmE V := inl1.
 
-(* Need to decide how to model parallelism,
-    could be implicitly through holding onto a vector of scheduled ctrees and at each step choosing one to step.
-      This requires an explicit "commit the values of all these tvars as one action" event
-    or could be done with explicit yields, trusting the specification to not miss observable intermediate states (and sources of non-termination).
-      this allows the implementation to sequence writes of single tvars
-    I am for now electing to use explicit yielding.
- *)
-(* start with an empty log, and then perform log operations when intercepting tvarE events *)
-
-(*
-Definition atomically {E} {K} {V : K -> Type} `{tvarE V -< E} {A} (t0 : itree (stmE V) A) : itree E A :=
-  trigger BeginTransaction ;;
-  (cofix _atomic t :=
-    match observe t with
-    | RetF a =>
-        trigger CommitTransaction ;;
-        Ret a
-    | TauF t => Tau (_atomic t)
-    | VisF (inr1 e) k => Vis (subevent _ e) (fun x => _atomic (k x))
-    | VisF (inl1 Retry) _ =>
-        (* abort a transaction, and then start a new one.
-           should tell the scheduler to put this back into the thread pool
-        *)
-        Vis (subevent _ AbortTransaction)
-            (fun _ => trigger (BeginTransaction) ;; _atomic t0)
-    end) t0.
-
-Definition orElse {A} {K} {V : K -> Type} (t1 t2 : itree (stmE V) A) : itree (stmE V) A :=
-  trigger BeginTransaction ;;
-  (cofix _orElse t :=
-    match observe t with
-    | RetF a =>
-        trigger CommitTransaction ;;
-        Ret a
-    | TauF t => Tau (_orElse t)
-    | VisF (inr1 e) k => Vis (inr1 e) (fun x => _orElse (k x))
-    | VisF (inl1 Retry) _ => trigger AbortTransaction ;; t2
-    end) t1.
-*)
-
-
-
-
 
 
 Definition pkey (K J : Type) := (K * J)%type.
@@ -134,7 +80,6 @@ Definition pkey_type {K J} (V : K -> Type) (pk : pkey K J) := V (fst pk).
 
 Definition commit_log {K} (V : K -> Type) {M} `{Foldable M (sigT (pkey_type V))} {E} `{H : tvarE V -< E} : M -> itree E unit :=
   fold (fun '(existT _ (k, n) v) acc => Vis (subevent (H := H) _ (WriteTVar (mk_tvar V n k) v)) (fun _ => acc)) (Ret tt).
-
 
 Definition handle_tvar_log {K} {V : K -> Type} {M} `{HMap (pkey K nat) (pkey_type V) M} {E} `{H : tvarE V -< E}
   (m : M) : forall {A}, tvarE V A -> itree E (A * M) :=
@@ -150,10 +95,14 @@ Definition handle_tvar_log {K} {V : K -> Type} {M} `{HMap (pkey K nat) (pkey_typ
     | WriteTVar (mk_tvar _ n k) v => Ret (tt, add (k, n) v m)
     end.
 
+
+
 Variant atomicE E : Type -> Type :=
 | Atomic : forall {A} (t : itree E A), atomicE E A.
 
 Arguments Atomic {E} {A} (_).
+
+
 
 Variant runStmE {K} (V : K -> Type) : Type -> Type :=
 | Atomically : forall {A} (t : itree (stmE V) A), runStmE V A.
@@ -163,10 +112,14 @@ Arguments Atomically {K} {V} {A} (t).
 Definition atomically {K} {V : K -> Type} {E} `{runStmE V -< E} {A} (t : itree (stmE V) A) : itree E A :=
   trigger (Atomically t).
 
+
+
 Variant transactionE E : Type -> Type :=
 | Transaction : forall {A}, itree E A -> transactionE E (option A).
 
 Arguments Transaction {E} {A} (_).
+
+
 
 Definition h_atomically {K} {V : K -> Type} {E} `{transactionE (stmE V) -< E} : runStmE V ~> itree E :=
   fun _ e =>
@@ -182,9 +135,6 @@ Definition h_atomically {K} {V : K -> Type} {E} `{transactionE (stmE V) -< E} : 
 
 
 
-
-
-
 Definition h_stm_write_log {K} {V : K -> Type} {M} `{HMap (pkey K nat) (pkey_type V) M} {E} `{tvarE V -< E}:
   stmE V ~> stateT M (failT (itree E)) :=
   fun _ e m =>
@@ -195,15 +145,16 @@ Definition h_stm_write_log {K} {V : K -> Type} {M} `{HMap (pkey K nat) (pkey_typ
         Ret (Some (m, a))
     end.
 
-(* assumes that we can atomically execute transacitons, ** NOT (in general) TRUE ** *)
+(* TODO: generalize to any HMap *)
+(* Implements transactions by executing them atomically (blocks all other threads from executing until it is finished) *)
 Definition atomic_transactions {K} {V : K -> Type} `{EqDec K eq}: transactionE (stmE V) ~> atomicE (tvarE V) :=
   fun _ e =>
     match e with
     | Transaction t =>
         let m : stateT (halist (pkey K nat) (pkey_type V)) (failT (itree (tvarE V))) _ :=
           interp h_stm_write_log t in
-        Atomic (oma <- m [] ;;
-                match oma with
+        Atomic (res <- m [] ;;
+                match res with
                 | Some (m, a) =>
                     commit_log _ m ;;
                     Ret (Some a)
@@ -229,12 +180,37 @@ Variant lockE : Type -> Type :=
 | Unlock : lockE unit.
 
 Definition spinlock {E} `{lockE -< E} : itree E unit :=
-  ITree.iter (fun _ => b <- trigger TryLock ;; if (b : bool) then Ret (inr tt) else Ret (inl tt)) tt.
+  ITree.iter (fun n => b <- trigger TryLock ;; if (b : bool) then Ret (inr tt) else Ret (inl (S n))) 0.
 
-Definition single_global_lock {K} {V : K -> Type} {M}
-  `{HMap (pkey K nat) (pkey_type V) M} {E} `{lockE -< E}:
-  transactionE (stmE V) ~> itree E.
-Abort.
+(* TODO: generalize to any HMap *)
+(* implements transactions through a single global lock that is acquired before transaction execution *)
+Definition single_global_lock {K} {V : K -> Type} `{EqDec K eq} {E} `{lockE -< E} `{tvarE V -< E}:
+  transactionE (stmE V) ~> itree E :=
+  fun _ e =>
+    match e with
+    | Transaction t =>
+        spinlock ;;
+        let m : stateT (halist (pkey K nat) (pkey_type V)) (failT (itree E)) _ :=
+          interp h_stm_write_log t in
+        res <- m [] ;;
+        match res with
+        | Some (m, a) =>
+            commit_log _ m ;;
+            trigger Unlock ;;
+            Ret (Some a)
+        | None =>
+            trigger Unlock ;;
+            Ret None
+        end
+    end.
+
+Definition h_lock {E} : lockE ~> stateT bool (itree E) :=
+  fun _ e l =>
+    match e with
+    | TryLock => Ret (true, negb l)
+    | Unlock => Ret (false, tt)
+    end.
+
 
 
 
@@ -258,7 +234,7 @@ Arguments UnlockTVar {K} {V} {A} (_).
 
 
 (* a blocking spinlock *)
-Definition spinlockTVar {K} {V : K -> Type} {E} `{tl2E V -< E} {A} (x : TVar V A) : itree E unit :=
+Definition spinlock_tvar {K} {V : K -> Type} {E} `{tl2E V -< E} {A} (x : TVar V A) : itree E unit :=
   ITree.iter (fun _ => b <- trigger (TryLockTVar x) ;; if (b : bool) then Ret (inr tt) else Ret (inl tt)) tt.
 
 
@@ -296,12 +272,13 @@ Definition handle_tvar_log_tl2 {K} {V : K -> Type} {M} `{HMap (pkey K nat) (pkey
 Definition write_tl2 {K} (V : K -> Type) {E} `{tl2E V -< E} (n : nat) (k : K) (v : V k) (wv : nat) (l : bool): itree E unit :=
   trigger (WriteTVarTL2 (mk_tvar V n k) v wv l).
 
+
+
 Definition is_none {A} (o : option A) : bool := match o with None => true | Some _ => false end.
 
-From Crane Require Mergesort.
+Definition to_list {M A} `{Foldable M A} : M -> list A := fold cons [].
 
-Definition toList {M A} `{Foldable M A} : M -> list A := fold cons [].
-
+(* Implements transactions with the Transactional Locking II algorithm *)
 Definition tl2 {K} {V : K -> Type} {M}
   `{HMap (pkey K nat) (pkey_type V) M} `{Foldable M (sigT (@pkey_type K nat V))} {E} `{tl2E V -< E} `{errorE -< E}:
   transactionE (stmE V) ~> itree E :=
@@ -319,9 +296,9 @@ Definition tl2 {K} {V : K -> Type} {M}
         | Some ((s_r, m_w), a) =>
             (* lock the write-set *)
             (* sorts the locks so that we avoid deadlocks *)
-            let locks := Mergesort.sort (fun x y => Nat.leb (snd (projT1 x)) (snd (projT1 y))) (toList m_w) in
+            let locks := Mergesort.sort (fun x y => Nat.leb (snd (projT1 x)) (snd (projT1 y))) (to_list m_w) in
             fold (fun '(existT _ (k, n) _) (acc : itree E unit) =>
-                    spinlockTVar (mk_tvar V n k) ;; acc)
+                    spinlock_tvar (mk_tvar V n k) ;; acc)
                  (Ret tt)
                  locks ;;
                 (* increment the global version-clock *)
@@ -422,22 +399,19 @@ Definition h_tvars_tl2 {K} (V : K -> Type):
 
 
 
-Variant forkE : Type -> Type :=
-| Fork : forkE bool.
-
-Definition fork {E} `{forkE -< E} (t1 t2 : itree E unit) : itree E unit :=
-  b <- trigger Fork ;;
-  if (b : bool) then t1 else t2.
-
-Inductive parE E : Type -> Type :=
-| Par : forall {A B} (t1 : itree (parE E +' E) A) (t2 : itree (parE E +' E) B), parE E (A * B).
-
-Definition par {E F} `{parE F -< E} {A B} (t1 : itree (parE F +' F) A) (t2 : itree (parE F +' F) B) : itree E (A * B) :=
-  trigger (Par _ t1 t2).
-
 (* Scheduler implementations should be such that 0 getting chosen infinitely often will ensure that every thread gets scheduled *)
 Variant scheduleE : Type -> Type :=
 | Schedule (n : nat) : scheduleE {m : nat | m < n}.
+
+Definition h_rr {E} : scheduleE ~> itree E :=
+  fun _ e =>
+    match e with
+    | Schedule n =>
+        match n with
+        | 0 => ITree.spin (* error *)
+        | S m => Ret (exist _ 0 (PeanoNat.Nat.lt_0_succ m))
+        end
+    end.
 
 Fixpoint signth {A} (l : list A) (n : {m : nat | m < length l}) : A :=
   match l, n with
@@ -448,6 +422,14 @@ Fixpoint signth {A} (l : list A) (n : {m : nat | m < length l}) : A :=
     | S m => fun H : S m < S (length l) => signth l (exist _ m (PeanoNat.lt_S_n _ _ H))
     end H
   end.
+
+
+
+Inductive parE E : Type -> Type :=
+| Par : forall {A B} (t1 : itree (parE E +' E) A) (t2 : itree (parE E +' E) B), parE E (A * B).
+
+Definition par {E F} `{parE F -< E} {A B} (t1 : itree (parE F +' F) A) (t2 : itree (parE F +' F) B) : itree E (A * B) :=
+  trigger (Par _ t1 t2).
 
 Inductive par_tree E R :=
 | Split {A B} (b : bool) (t1 : par_tree E A) (t2 : par_tree E B) (k : A * B -> itree (parE E +' E) R) : par_tree E R
@@ -462,8 +444,6 @@ Inductive par_tree_ctx E R : Type -> Type :=
 | LeftDoneCtx {A B T} (a : A) (k : A * B -> itree (parE E +' E) T) (pk : par_tree_ctx E R T) : par_tree_ctx E R B
 | RightDoneCtx {A B T} (b : B) (k : A * B -> itree (parE E +' E) T) (pk : par_tree_ctx E R T) : par_tree_ctx E R A.
 
-
-
 Fixpoint plug_par_tree_ctx {E R T} (pk : par_tree_ctx E R T) (pt : par_tree E T) : par_tree E R :=
   match pk, pt with
   | MT _ _, pt => pt
@@ -472,8 +452,6 @@ Fixpoint plug_par_tree_ctx {E R T} (pk : par_tree_ctx E R T) (pt : par_tree E T)
   | LeftDoneCtx _ _ a k pk, pt => plug_par_tree_ctx pk (LeftDone _ _ a pt k)
   | RightDoneCtx _ _ b k pk, pt => plug_par_tree_ctx pk (RightDone _ _ pt b k)
   end.
-
-
 
 (* needs to randomly select a leaf from the par tree, then observe it and put it back *)
 CoFixpoint schedule_par {E R} (pt : par_tree E R) : itree (scheduleE +' E) R :=
@@ -512,6 +490,13 @@ CoFixpoint schedule_par {E R} (pt : par_tree E R) : itree (scheduleE +' E) R :=
 
 
 
+Variant forkE : Type -> Type :=
+| Fork : forkE bool.
+
+Definition fork {E} `{forkE -< E} (t1 t2 : itree E unit) : itree E unit :=
+  b <- trigger Fork ;;
+  if (b : bool) then t1 else t2.
+
 (* arranged so that a scheduleE handler that always returns 0 will be a round-robin scheduler *)
 CoFixpoint schedule {E F} `{F -< E} (l : list (itree (atomicE F +' forkE +' E) unit)) : itree (scheduleE +' E) unit :=
   match l with
@@ -537,16 +522,6 @@ CoFixpoint schedule {E F} `{F -< E} (l : list (itree (atomicE F +' forkE +' E) u
           end)
   end.
 
-Definition h_rr {E} : scheduleE ~> itree E :=
-  fun _ e =>
-    match e with
-    | Schedule n =>
-        match n with
-        | 0 => ITree.spin (* error *)
-        | S m => Ret (exist _ 0 (PeanoNat.Nat.lt_0_succ m))
-        end
-    end.
-
 Definition schedule_rr {E F} `{F -< E} (l : list (itree (atomicE F +' forkE +' E) unit)) : itree E unit :=
   interp (case_ h_rr (id_ _)) (schedule l).
 
@@ -564,6 +539,8 @@ Definition modifyTVar {K} {V : K -> Type} {A : Type} (a : TVar V A) (f : A -> A)
   val <- readTVar a ;;
   writeTVar a (f val) ;;
   Ret tt.
+
+
 
 Section example.
 
@@ -599,21 +576,35 @@ Section example.
     (t1 : itree (transactionE (stmE V) +' forkE) unit):
     itree void1 (halist (pkey K nat) (pkey_type V) * unit) :=
     let t2 : itree (atomicE (tvarE V) +' forkE +' tvarE V) unit := translate (bimap atomic_transactions subevent) t1 in
-    let s : stateT _ _ _ := interp (handle_tvars _ _) (schedule_rr [t2]) in
-    s HMap.empty.
+    let t3 : stateT _ _ _ := interp (handle_tvars _ _) (schedule_rr [t2]) in
+    t3 HMap.empty.
+
+
+
+  Definition h_trigger {E F} `{E -< F}: Handler E F :=
+    fun _ e => trigger e.
+
+  Definition run_single_lock {K} `{EqDec K eq} {V : K -> Type}
+    (t1 : itree (transactionE (stmE V) +' forkE) unit):
+    itree void1 (halist (pkey K nat) (pkey_type V) * (bool * unit)) :=
+    let t2 : itree (atomicE void1 +' forkE +' lockE +' tvarE V) unit :=
+      interp (case_ single_global_lock h_trigger) t1 in
+    let t3 := schedule_rr [t2] in
+    let t4 : stateT bool (itree (tvarE V)) unit := interp (case_ h_lock pure_state) t3 in
+    let t5 : stateT _ (itree void1) _ := interp (handle_tvars _ _) (t4 false) in
+    t5 HMap.empty.
 
 
 
   Definition run_tl2 {K} `{EqDec K eq} {V : K -> Type}
     (t1 : itree (transactionE (stmE V) +' forkE) unit)
     : itree errorE (nat * halist (pkey K nat) (fun p => (V (fst p) * nat * bool)%type) * unit) :=
-    let t2 := interp (@case_ _ IFun sum1 _ _ _ (itree (atomicE void1 +' forkE +' tl2E V +' errorE))
-                             tl2 (fun _ e => trigger e))
-                     t1 in
+    let t2 : itree (atomicE void1 +' forkE +' tl2E V +' errorE) unit :=
+      interp (case_ tl2 h_trigger) t1 in
     let t3 : itree (tl2E V +' errorE) unit := schedule_rr [t2] in
-    let s : stateT _ (itree errorE) _ :=
+    let t4 : stateT _ (itree errorE) _ :=
       interp (case_ (h_tl2 _) pure_state) t3 in
-    s (0, HMap.empty).
+    t4 (0, HMap.empty).
 
 
 
@@ -637,6 +628,7 @@ Section example.
     fun o => match o with None => ITree.spin | Some a => Ret a end.
 
   Compute (force 178 (run_atomic_transactions (run_atomically (fib 8)))).
+  Compute (force 1000 (run_single_lock (run_atomically (fib 8)))).
   Compute (force 1874 (run_tl2 (run_atomically (fib 8)))).
 
   Definition read_test : itree (runStmE nats +' forkE) unit :=
@@ -704,10 +696,14 @@ Section example.
     fork (v1 <- atomically (takeMVar mv) ;; atomically (writeTVar done (v1 * v1)))
          (atomically (putMVar mv 3)).
 
-  Compute (force 100 (run_atomic_transactions (run_atomically message_passing))).
+  Compute (force 100 (run_atomic_transactions (run_atomically message_passing_simpler))).
   Compute (force 100 (run_atomic_transactions (run_atomically message_passing_simple))).
-  Compute (force 1000 (run_tl2 (run_atomically message_passing_simple))).
+  Compute (force 100 (run_atomic_transactions (run_atomically message_passing))).
+  Compute (force 200 (run_single_lock (run_atomically message_passing_simpler))).
+  Compute (force 200 (run_single_lock (run_atomically message_passing_simple))).
+  Compute (force 300 (run_single_lock (run_atomically message_passing))).
   Compute (force 1000 (run_tl2 (run_atomically message_passing_simpler))).
+  Compute (force 1000 (run_tl2 (run_atomically message_passing_simple))).
   Compute (force 1000 (run_tl2 (run_atomically message_passing))).
 
   (* TODO: tests with orElse *)
