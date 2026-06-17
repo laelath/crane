@@ -12,10 +12,12 @@ From Crane Require Import Mapping.Std Monads.IO External.Vector.
 From Crane Require Export Monads.STMDefs.
 
 Crane Extract Inductive tvarE => ""
-  [ "stm::newTVar(%a0)" "stm::readTVar(%a0)" "stm::writeTVar(%a0, %a1)" ]
+  [ "stm::newTVar(%a1)" "stm::readTVar(%a0)" "stm::writeTVar(%a0, %a1)" ]
   From "stm_adapter.h".
 
-Crane Extract Inlined Constant TVar => "stm::TVar<%t0>" From "stm_adapter.h".
+Crane Extract Inductive TVar => "stm::TVar<%t2>"
+  [ "static_assert(false, ""mk_tvar should not be extracted, use NewTVar instead."")" ]
+  From "stm_adapter.h".
 
 Crane Extract Inlined Constant readTVar => "stm::readTVar(%a0)".
 Crane Extract Inlined Constant writeTVar => "stm::writeTVar(%a0, %a1)".

@@ -9,7 +9,7 @@
    - Std: [Crane Extract Inlined Constant CHT.max => "std::max(%a0, %a1)".]
    - BDE: [Crane Extract Inlined Constant CHT.max => "bsl::max(%a0, %a1)".]
 *)
-From Stdlib Require Import List Bool.
+From Stdlib Require Import List Bool Vector.
 From Crane Require Extraction.
 From Crane Require Import Monads.ITree Monads.IODefs Monads.STMDefs External.VectorDefs.
 From Corelib Require Import PrimInt63.
@@ -24,14 +24,26 @@ Module CHT.
 
 Open Scope int63.
 
-Fixpoint assoc_lookup {K V} (eqb : K -> K -> bool) (k : K) (xs : list (K * V))
+Section key_val.
+
+Context {K V : Type}.
+
+Definition const_type : unit -> Type :=
+  fun _ => V.
+
+#[local] Notation TVar := (TVar const_type).
+#[local] Notation stmE := (stmE const_type).
+
+
+
+Fixpoint assoc_lookup (eqb : K -> K -> bool) (k : K) (xs : list (K * V))
   : option V :=
   match xs with
   | [] => None
   | (k', v) :: tl => if eqb k k' then Some v else assoc_lookup eqb k tl
   end.
 
-Fixpoint assoc_insert_or_replace {K V}
+Fixpoint assoc_insert_or_replace
          (eqb : K -> K -> bool) (k : K) (v : V) (xs : list (K * V))
   : list (K * V) :=
   match xs with
@@ -41,7 +53,7 @@ Fixpoint assoc_insert_or_replace {K V}
       else (k', v') :: assoc_insert_or_replace eqb k v tl
   end.
 
-Fixpoint assoc_remove {K V}
+Fixpoint assoc_remove
          (eqb : K -> K -> bool) (k : K) (xs : list (K * V))
   : (option V * list (K * V)) :=
   match xs with
@@ -52,19 +64,19 @@ Fixpoint assoc_remove {K V}
       else let q := assoc_remove eqb k tl in (fst q, (k', v') :: (snd q))
   end.
 
-Record CHT (K V : Type) := {
+Record CHT := {
   cht_eqb     : K -> K -> bool;
   cht_hash    : K -> int;
-  cht_buckets : vector (TVar (list (K * V)));
-  cht_nbuckets: int;                         (* cached, >= 1 *)
-  cht_fallback: TVar (list (K * V))          (* first bucket as a total fallback *)
+  cht_nbuckets: nat;
+  cht_buckets : Vector.t (TVar (list (K * V))) cht_nbuckets;
+  cht_fallback: TVar (list (K * V))           (* first bucket as a total fallback *)
 }.
 
 (* Total bucket selection *)
-Definition bucket_of {K V} (t : CHT K V) (k : K)
+Definition bucket_of (t : CHT) (k : K)
   :  itree stmE (TVar (list (K * V))) :=
   let i := mod (t.(cht_hash) k) t.(cht_nbuckets) in
-  getSTM t.(cht_buckets) i.
+  t.(cht_buckets) i.
 
 Section STM.
 
@@ -164,5 +176,7 @@ Definition hash_update {K V}
 
 Definition get_or {K V} (t : CHT K V) (k : K) (dflt : V) : itree ioE V :=
   atomically (stm_get_or t k dflt).
+
+End key_val.
 
 End CHT.

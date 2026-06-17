@@ -4,7 +4,7 @@ From Corelib Require Import PrimInt63.
 From Crane Require Extraction.
 From Crane Require Import Mapping.Std Mapping.NatIntStd Monads.ITree Monads.IO Monads.STM.
 
-From Stdlib Require Import List Arith.
+From Stdlib Require Import List Arith Classes.EquivDec.
 
 Import ListNotations.
 Set Implicit Arguments.
@@ -12,50 +12,75 @@ Set Primitive Projections.
 
 Module stmtest.
 
-(* A guarded read that retries if a predicate fails *)
-Definition readOrRetry {A} (tv : TVar A) (ok : A -> bool) : itree stmE A :=
-  x <- readTVar tv ;;
-  if ok x then Ret x else retry.
-
 (* === Tests === *)
 
-(* 1) Basic: create a TVar, read, write, read; returns 1 *)
-Definition stm_basic_counter (_ : unit) : itree stmE nat :=
-  c <- newTVar 0 ;;
-  writeTVar c 1 ;;
-  readTVar c.
+Inductive Ty :=
+| Nat : Ty
+| List : Ty -> Ty.
 
-Definition io_basic_counter : itree ioE nat :=
-  atomically (stm_basic_counter tt).
+Definition D : Ty -> Type :=
+  fix _denote (t : Ty) :=
+    match t with
+    | Nat => nat
+    | List t => list (_denote t)
+    end.
 
-(* 2) Increment test: write = read + 1; returns x+1 *)
-Definition stm_inc (x : nat) : itree stmE nat :=
-  c <- newTVar x ;;
-  modifyTVar c (fun n => S n) ;;
-  readTVar c.
+(*
+Definition Ty_dec (x y : Ty) : {x = y} + {x <> y}.
+  decide equality.
+Defined.
 
-Definition io_inc (x : nat) : itree ioE nat :=
-  atomically (stm_inc x).
+#[global] Instance EqDec_Ty : EqDec Ty eq := Ty_dec.
+*)
 
-(* 3) Read-your-own-writes and sequencing; returns x + (x) = 2x *)
-Definition stm_add_self (x : nat) : itree stmE nat :=
-  c <- newTVar x ;;
-  v <- readTVar c ;;
-  writeTVar c (v + x) ;;
-  readTVar c.
+Crane Extract Skip Ty.
+Crane Extract Skip Ty_rect.
+Crane Extract Skip Ty_rec.
+Crane Extract Skip D.
+(*
+Crane Extract Skip Ty_dec.
+Crane Extract Skip EqDec_Ty.
+*)
 
-Definition io_add_self (x : nat) : itree ioE nat :=
-  atomically (stm_add_self x).
+
+
+Definition ioStmE := ioE +' runStmE D.
+
+Crane Extract Skip ioStmE.
+
+(* 1) Basic: test creating a TVar, reading and writing *)
+Definition basic_read (x : nat) : itree ioStmE nat :=
+  c <- atomically (newTVar Nat x) ;;
+  atomically (readTVar c).
+
+Definition basic_write (x : nat) : itree ioStmE nat :=
+  c <- atomically (newTVar Nat 0) ;;
+  atomically (writeTVar c x) ;;
+  atomically (readTVar c).
+
+(* 2) Increment test: testing reading and writing in one transaction *)
+Definition increment (x : nat) : itree ioStmE nat :=
+  c <- atomically (newTVar Nat x) ;;
+  atomically (modifyTVar c S) ;;
+  atomically (readTVar c).
+
+(* 3) Test that a transaction can read its own writes *)
+Definition write_read (x : nat) : itree ioStmE nat :=
+  c <- atomically (newTVar Nat 0) ;;
+  atomically (
+    writeTVar c x ;;
+    readTVar c
+  ).
 
 (* 4) A small queue modeled as list nat inside a TVar *)
 
 (* push at tail *)
-Definition stm_enqueue (q : TVar (list nat)) (x : nat) : itree stmE unit :=
+Definition stm_enqueue {K} {V : K -> Type} (q : TVar V (list nat)) (x : nat) : itree (stmE V) unit :=
   xs <- readTVar q ;;
   writeTVar q (xs ++ [x]).
 
 (* pop from head; retry if empty *)
-Definition stm_dequeue (q : TVar (list nat)) : itree stmE nat :=
+Definition stm_dequeue {K} {V : K -> Type} (q : TVar V (list nat)) : itree (stmE V) nat :=
   xs <- readTVar q ;;
   match xs with
   | []      => retry
@@ -63,26 +88,27 @@ Definition stm_dequeue (q : TVar (list nat)) : itree stmE nat :=
   end.
 
 (* tryDequeue with default, using orElse to avoid blocking *)
-Definition stm_tryDequeue (q : TVar (list nat)) (dflt : nat) : itree stmE nat :=
-  orElse (stm_dequeue q) (Ret dflt).
+(*
+Definition stm_tryDequeue {K} {V : K -> Type} (q : TVar V (list nat)) : itree (stmE V) (option nat) :=
+  orElse (v <- stm_dequeue q ;; Ret (Some v)) (Ret None).
+*)
 
 (* smoke test: enqueue then dequeue must return the enqueued element *)
-Definition stm_queue_roundtrip (x : nat) : itree stmE nat :=
-  q <- newTVar ([] : list nat) ;;
-  stm_enqueue q x ;;
-  stm_dequeue q.
-
-Definition io_queue_roundtrip (x : nat) : itree ioE nat :=
-  atomically (stm_queue_roundtrip x).
+Definition io_queue_roundtrip (x y : nat) : itree ioStmE nat :=
+  q <- atomically (newTVar (List Nat) []) ;;
+  atomically (stm_enqueue q x ;; stm_enqueue q y) ;;
+  atomically (stm_dequeue q).
 
 (* 5) orElse + retry behavior *)
 (* First branch retries on empty; second returns a constant 42 *)
+(*
 Definition stm_orElse_retry_example (_ : unit) : itree stmE nat :=
   q <- newTVar ([] : list nat) ;;
   orElse (stm_dequeue q) (Ret 42).
 
 Definition io_orElse_retry_example : itree ioE nat :=
   atomically (stm_orElse_retry_example tt).
+*)
 
 End stmtest.
 

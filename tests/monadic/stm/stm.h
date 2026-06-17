@@ -1,10 +1,6 @@
 #ifndef INCLUDED_STM
 #define INCLUDED_STM
 
-#include <any>
-#include <filesystem>
-#include <fstream>
-#include <iostream>
 #include <memory>
 #include <stm_adapter.h>
 #include <system_error>
@@ -117,42 +113,44 @@ public:
 };
 
 struct STMDefs {
-  template <typename T1, typename F1>
-    requires std::is_invocable_r_v<T1, F1 &, T1 &>
-  static void modifyTVar(stm::TVar<T1> a, F1 &&f);
+  template <typename T1 = void, typename T2 = void, typename T3, typename F1>
+    requires std::is_invocable_r_v<T3, F1 &, T3 &>
+  static void modifyTVar(const stm::TVar<T3> &a, F1 &&f);
 };
 
 struct stmtest {
-  template <typename T1, typename F1>
-    requires std::is_invocable_r_v<bool, F1 &, T1 &>
-  static T1 readOrRetry(stm::TVar<T1> tv, F1 &&ok) {
-    T1 x = stm::readTVar(tv);
-    if (ok(x)) {
-      return x;
+  static uint64_t basic_read(uint64_t x);
+  static uint64_t basic_write(uint64_t x);
+  static uint64_t increment(uint64_t x);
+  static uint64_t write_read(uint64_t x);
+
+  template <typename T1 = void, typename T2 = void>
+  static void stm_enqueue(const stm::TVar<List<uint64_t>> &q, uint64_t x) {
+    List<uint64_t> xs = stm::readTVar(q);
+    stm::writeTVar(
+        q, std::move(xs).app(List<uint64_t>::cons(x, List<uint64_t>::nil())));
+    return;
+  }
+
+  template <typename T1 = void, typename T2 = void>
+  static uint64_t stm_dequeue(const stm::TVar<List<uint64_t>> &q) {
+    List<uint64_t> xs = stm::readTVar(q);
+    if (std::holds_alternative<typename List<uint64_t>::Nil>(xs.v_mut())) {
+      return stm::retry<uint64_t>();
     } else {
-      return stm::retry<T1>();
+      auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(xs.v_mut());
+      stm::writeTVar(q, *a1);
+      return a0;
     }
   }
 
-  static uint64_t stm_basic_counter(std::monostate _x);
-  static uint64_t io_basic_counter();
-  static uint64_t stm_inc(uint64_t x);
-  static uint64_t io_inc(uint64_t x);
-  static uint64_t stm_add_self(uint64_t x);
-  static uint64_t io_add_self(uint64_t x);
-  static void stm_enqueue(stm::TVar<List<uint64_t>> q, uint64_t x);
-  static uint64_t stm_dequeue(stm::TVar<List<uint64_t>> q);
-  static uint64_t stm_tryDequeue(stm::TVar<List<uint64_t>> q, uint64_t dflt);
-  static uint64_t stm_queue_roundtrip(uint64_t x);
-  static uint64_t io_queue_roundtrip(uint64_t x);
-  static uint64_t stm_orElse_retry_example(std::monostate _x);
-  static uint64_t io_orElse_retry_example();
+  static uint64_t io_queue_roundtrip(uint64_t x, uint64_t y);
 };
 
-template <typename T1, typename F1>
-  requires std::is_invocable_r_v<T1, F1 &, T1 &>
-void STMDefs::modifyTVar(stm::TVar<T1> a, F1 &&f) {
-  T1 val = stm::readTVar(a);
+template <typename T1 = void, typename T2 = void, typename T3, typename F1>
+  requires std::is_invocable_r_v<T3, F1 &, T3 &>
+void STMDefs::modifyTVar(const stm::TVar<T3> &a, F1 &&f) {
+  T3 val = stm::readTVar(a);
   stm::writeTVar(a, f(val));
   return;
 }
