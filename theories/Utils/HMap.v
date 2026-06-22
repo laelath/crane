@@ -62,3 +62,7 @@ Arguments contains {K V} {map} {M} _ _.
 Arguments singleton {K V} {map} {M} _ _.
 Arguments combine {K V} {map} {M} _ _ _ _.
 Arguments HMapOk {K V} {map} _.
+
+(* definition of keys as a pair of a type tag and an index *)
+Definition pkey (K I : Type) := (K * I)%type.
+Definition pkey_type {K I} (V : K -> Type) (pk : pkey K I) := V (fst pk).
