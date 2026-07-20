@@ -32,5 +32,3 @@ Definition run_atomic_transactions {K} `{EqDec K eq} {V : K -> Type}
   let t2 : itree (atomicE (tvarE V) +' forkE +' tvarE V) unit := translate (bimap atomic_transactions subevent) t1 in
   let t3 : stateT _ _ _ := interp (handle_tvars _ _) (schedule_rr [t2]) in
   t3 HMap.empty.
-
-

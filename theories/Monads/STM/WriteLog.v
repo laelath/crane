@@ -51,4 +51,3 @@ Definition handle_tvars {E} {K} (V : K -> Type) M
         (let '(mk_tvar _ n k) := x in
          fun (v : V k) => Ret (add (k, n) v m, tt)) v
     end.
-
