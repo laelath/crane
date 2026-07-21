@@ -10,11 +10,6 @@ From ITree Require Import Basics.CategoryOps.
 
 Open Scope itree_scope.
 
-Variant atomicE E : Type -> Type :=
-| Atomic : forall {A} (t : itree E A), atomicE E A.
-
-Arguments Atomic {E} {A} (_).
-
 Variant forkE : Type -> Type :=
 | Fork : forkE bool.
 
@@ -23,7 +18,7 @@ Definition fork {E} `{forkE -< E} (t1 t2 : itree E unit) : itree E unit :=
   if (b : bool) then t1 else t2.
 
 (* arranged so that a scheduleE handler that always returns 0 will be a round-robin scheduler *)
-CoFixpoint schedule {E F} `{F -< E} (l : list (itree (atomicE F +' forkE +' E) unit)) : itree (scheduleE +' E) unit :=
+CoFixpoint schedule {E} (l : list (itree (forkE +' E) unit)) : itree (scheduleE +' E) unit :=
   match l with
   | [] => Ret tt
   | _ =>
@@ -37,15 +32,11 @@ CoFixpoint schedule {E F} `{F -< E} (l : list (itree (atomicE F +' forkE +' E) u
           | TauF t => schedule (l1 ++ l2 ++ [t])
           | VisF (inl1 e) k =>
               match e, k with
-              | Atomic t, k => a <- translate subevent t ;; schedule (l1 ++ l2 ++ [k a])
-              end
-          | VisF (inr1 (inl1 e)) k =>
-              match e, k with
               | Fork, k => schedule (l1 ++ l2 ++ [k true; k false])
               end
-          | VisF (inr1 (inr1 e)) k => Vis (subevent _ e) (fun x => schedule (l1 ++ l2 ++ [k x]))
+          | VisF (inr1 e) k => Vis (subevent _ e) (fun x => schedule (l1 ++ l2 ++ [k x]))
           end)
   end.
 
-Definition schedule_rr {E F} `{F -< E} (l : list (itree (atomicE F +' forkE +' E) unit)) : itree E unit :=
+Definition schedule_rr {E} (l : list (itree (forkE +' E) unit)) : itree E unit :=
   interp (case_ h_rr (id_ _)) (schedule l).

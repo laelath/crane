@@ -1,6 +1,6 @@
 
 From Corelib Require Import PrimString.
-From Crane.Monads Require Import ITree STMDefs STM.TransactionDefs STM.ForkDefs.
+From Crane.Monads Require Import ITree STMDefs STM.TransactionDefs STM.ForkDefs STM.Error.
 From Crane.Utils Require Import HMap HAList Mergesort.
 
 From Stdlib Require Import Arith.PeanoNat Bool.Bool Classes.EquivDec List.
@@ -12,6 +12,7 @@ From ExtLib Require Import Data.List Structures.Reducible.
 From ITree Require Import Basics.Basics Basics.CategoryOps Events.State Events.FailFacts.
 
 Import Basics.Monads.
+
 
 
 Variant tl2E {K} (V : K -> Type) : Type -> Type :=
@@ -36,14 +37,6 @@ Arguments UnlockTVar {K} {V} {A} (_).
 (* a blocking spinlock *)
 Definition spinlock_tvar {K} {V : K -> Type} {E} `{tl2E V -< E} {A} (x : TVar V A) : itree E unit :=
   ITree.iter (fun _ => b <- trigger (TryLockTVar x) ;; if (b : bool) then Ret (inr tt) else Ret (inl tt)) tt.
-
-
-
-Variant errorE : Type -> Type :=
-| Error (msg : string) : errorE void.
-
-Definition error {E A} `{errorE -< E} (msg : string) : itree E A :=
-  Vis (subevent _ (Error msg)) (fun (x : void) => match x with end).
 
 
 
@@ -80,7 +73,7 @@ Definition to_list {M A} `{Foldable M A} : M -> list A := fold cons [].
 
 (* Implements transactions with the Transactional Locking II algorithm *)
 Definition tl2 {K} {V : K -> Type} {M}
-  `{HMap (pkey K nat) (pkey_type V) M} `{Foldable M (sigT (@pkey_type K nat V))} {E} `{tl2E V -< E} `{errorE -< E}:
+  `{HMap (pkey K nat) (pkey_type V) M} `{Foldable M (sigT (@pkey_type K nat V))} {E} `{tl2E V -< E}:
   transactionE (stmE V) ~> itree E :=
   fun A e =>
     match e with
@@ -130,7 +123,7 @@ Definition tl2 {K} {V : K -> Type} {M}
 
 
 
-Definition h_tl2 {E} `{errorE -< E} {K} {V : K -> Type} M
+Definition h_tl2 {E} `{errorE string -< E} {K} {V : K -> Type} M
   `{HMap (pkey K nat) (fun p => (V (fst p) * nat * bool)%type) M}
   `{Foldable M (sigT (fun p : K * nat => (V (fst p) * nat * bool)%type))}:
   tl2E V ~> stateT (nat * M) (itree E) :=
@@ -145,7 +138,7 @@ Definition h_tl2 {E} `{errorE -< E} {K} {V : K -> Type} M
         let '(mk_tvar _ n k) := x in
         match lookup (k, n) m with
         | Some v => Ret (vc, m, v)
-        | None => error "ReadTVarTL2 lookup failed" (* error *)
+        | None => error ("h_tl2 ReadTVarTL2 lookup failed" : string)
         end
     | WriteTVarTL2 x v wv l =>
         (let '(mk_tvar _ n k) := x in
@@ -157,19 +150,19 @@ Definition h_tl2 {E} `{errorE -< E} {K} {V : K -> Type} M
             if (l : bool)
             then Ret (vc, m, false)
             else Ret (vc, add (k, n) (v, wv, true) m, true)
-        | None => error "h_tl2 TryLockTVar lookup failed" (* error *)
+        | None => error ("h_tl2 TryLockTVar lookup failed" : string)
         end
     | UnlockTVar (mk_tvar _ n k) =>
         match lookup (k, n) m with
         | Some (v, wv, l) =>
           Ret (vc, add (k, n) (v, wv, false) m, tt)
-        | None => error "h_tl2 UnlockTVar lookup failed"
+        | None => error ("h_tl2 UnlockTVar lookup failed" : string)
         end
     end.
 
 
 
-Definition h_tvars_tl2 {K} (V : K -> Type) {E} `{tl2E V -< E} `{errorE -< E}:
+Definition h_tvars_tl2 {K} (V : K -> Type) {E} `{tl2E V -< E} `{errorE string -< E}:
   tvarE V ~> itree E :=
   fun _ e =>
     match e with
@@ -177,7 +170,7 @@ Definition h_tvars_tl2 {K} (V : K -> Type) {E} `{tl2E V -< E} `{errorE -< E}:
     | ReadTVar x =>
         '(v, _, _) <- trigger (ReadTVarTL2 x) ;;
         Ret v
-    | WriteTVar x v => error "h_tvars_tl2 write to a tvar outside a transaction"
+    | WriteTVar x v => error ("h_tvars_tl2 write to a tvar outside a transaction" : string)
     end.
 
 Definition h_trigger {E F} `{E -< F}: Handler E F :=
@@ -185,10 +178,10 @@ Definition h_trigger {E F} `{E -< F}: Handler E F :=
 
 Definition run_tl2_fork {K} `{EqDec K eq} {V : K -> Type}
   (t1 : itree (transactionE (stmE V) +' forkE) unit)
-  : itree errorE (nat * halist (pkey K nat) (fun p => (V (fst p) * nat * bool)%type) * unit) :=
-  let t2 : itree (atomicE void1 +' forkE +' tl2E V +' errorE) unit :=
+  : itree (errorE string) (nat * halist (pkey K nat) (fun p => (V (fst p) * nat * bool)%type) * unit) :=
+  let t2 : itree (forkE +' tl2E V +' errorE string) unit :=
     interp (case_ tl2 h_trigger) t1 in
-  let t3 : itree (tl2E V +' errorE) unit := schedule_rr [t2] in
-  let t4 : stateT _ (itree errorE) _ :=
+  let t3 : itree (tl2E V +' errorE string) unit := schedule_rr [t2] in
+  let t4 : stateT _ (itree (errorE string)) _ :=
     interp (case_ (h_tl2 _) pure_state) t3 in
   t4 (0, HMap.empty).

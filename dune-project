@@ -14,4 +14,6 @@
    (rocq-core (>= "9.0~"))
    (rocq-stdlib (>= "9.0~"))
    (coq-ext-lib (>= "0.13.0"))
+   (rocq-coinduction (>= "1.21"))
+   (rocq-relation-algebra (>= "1.8.0"))
    (ocaml-lsp-server :with-dev-setup)))

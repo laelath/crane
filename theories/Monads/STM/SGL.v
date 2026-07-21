@@ -52,7 +52,7 @@ Definition h_trigger {E F} `{E -< F}: Handler E F :=
 Definition run_single_lock_fork {K} `{EqDec K eq} {V : K -> Type}
   (t1 : itree (transactionE (stmE V) +' forkE) unit):
   itree void1 (halist (pkey K nat) (pkey_type V) * (bool * unit)) :=
-  let t2 : itree (atomicE void1 +' forkE +' lockE +' tvarE V) unit :=
+  let t2 : itree (forkE +' lockE +' tvarE V) unit :=
     interp (case_ single_global_lock h_trigger) t1 in
   let t3 := schedule_rr [t2] in
   let t4 : stateT bool (itree (tvarE V)) unit := interp (case_ h_lock pure_state) t3 in
