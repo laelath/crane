@@ -3,4 +3,4 @@
  (name Crane)
  (package rocq-crane)
  (plugins rocq-crane.plugin)
- (theories Stdlib ITree ExtLib Paco))
+ (theories Stdlib ITree ExtLib Paco Coinduction))

@@ -13,6 +13,8 @@ depends: [
   "coq-equations" {with-test}
   "coq-itree"
   "coq-paco"
+  "coq-coinduction"
+  "coq-relation-algebra"
 ]
 build: ["dune" "build"]
 install: ["dune" "install"]
