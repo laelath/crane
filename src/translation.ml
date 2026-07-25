@@ -3126,7 +3126,21 @@ and gen_expr_custom_cons env (ty : ml_type) r ts =
         | Tmeta {contents = Some t} -> ml_ty_all_dummy t
         | _ -> false
       in
-      let hollow_container = is_custom_list && List.exists ml_ty_all_dummy tys in
+      (* [hollow_container] fires when the list's ML element annotation is all
+         [Tdummy] (extraction couldn't reduce it, e.g. an opaque alias like
+         [symbol_semty]).  Collapsing to bare [std::any] is only correct when
+         the concrete C++ element type ([temps]) is ITSELF erased — i.e. a
+         sibling production for the same erased list would build [deque<any>]
+         and the two must agree.  When [temps] recovers a fully-concrete
+         element type despite the hollow ML annotation (e.g. an abstract
+         [frame] seen through a module type, which still resolves to the
+         concrete [typename D::Defs::frame]), the list is a genuine
+         [deque<frame>] flowing into a concretely-typed consumer, so the
+         concrete element type must be preserved. *)
+      let hollow_container =
+        is_custom_list && List.exists ml_ty_all_dummy tys
+        && List.exists Ml_type_util.has_erased_type_in_type temps
+      in
       let temps =
         if hollow_container && temps <> [] then
           List.map (fun _ -> Tany) temps

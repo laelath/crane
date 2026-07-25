@@ -96,8 +96,7 @@ const std::deque<grammar_entry>
                           const auto &[ts, _x] =
                               std::any_cast<std::pair<std::any, std::any>>(tup);
                           return rec{crane_container_cast<std::deque<elt>>(
-                              std::any_cast<std::deque<std::any>>(
-                                  std::any_cast<std::deque<std::any>>(ts)))};
+                              std::any_cast<std::deque<std::any>>(ts))};
                         }))),
             [](auto _a0, auto _a1) {
               _a1.push_front(_a0);

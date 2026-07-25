@@ -5,8 +5,8 @@ From Crane Require Import Mapping.DequeList.
 From Stdlib Require Import List.
 Import ListNotations.
 
-(** Reproduces a compile-time failure in the extracted C++ parser core that
-    appeared after the grammar_pairlist_nil_cons_mismatch fix landed:
+(** Reproduces (now fixed) a compile-time failure in the extracted C++ parser
+    core that appeared after the grammar_pairlist_nil_cons_mismatch fix landed:
 
       Parser.h: no viable conversion from
         'pair<Parser_frame, deque<any>>' to
@@ -36,7 +36,16 @@ Import ListNotations.
     does Crane's erasure collapse [list frame]'s nil to the fully-erased shape
     [std::deque<std::any>{}], while [frame]'s cons sites (in [push_frame] /
     [tail_lengths], reached from the concrete side) build/expect the concrete
-    [std::deque<frame>] shape -- a compile-time "no viable conversion" error. *)
+    [std::deque<frame>] shape -- a compile-time "no viable conversion" error.
+
+    Fix: the grammar_pairlist_nil_cons_mismatch [hollow_container] collapse (in
+    [gen_expr_custom_cons]) fired whenever the list's ML element annotation was
+    all-[Tdummy], forcing the element to bare [std::any].  It now additionally
+    requires the concrete C++ element type ([temps]) to be erased too.  Here the
+    abstract [frame] resolves to a fully-concrete [typename D::Defs::frame]
+    despite the hollow ML annotation, so the concrete [std::deque<frame>] shape
+    is preserved, while genuinely-erased lists (like the pairlist case) still
+    collapse to [std::deque<std::any>]. *)
 
 (* Mirrors [tuple] underlying Defs.v's [symbols_semty]. *)
 Fixpoint tuple (xs : list Type) : Type :=

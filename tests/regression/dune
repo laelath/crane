@@ -6311,3 +6311,14 @@
   (alias runtest)
   (deps sigt_leaf_list_dispatch.t.exe)
   (action (run ./sigt_leaf_list_dispatch.t.exe))))
+
+(subdir parser_frame_modtype_nil
+ (rule
+  (targets parser_frame_modtype_nil.t.exe)
+  (deps ParserFrameModtypeNil.vo parser_frame_modtype_nil.t.cpp (source_tree .))
+  (action
+   (run %{project_root}/scripts/compile-std.sh %{project_root} parser_frame_modtype_nil.t.exe parser_frame_modtype_nil.cpp parser_frame_modtype_nil.t.cpp)))
+ (rule
+  (alias runtest)
+  (deps parser_frame_modtype_nil.t.exe)
+  (action (run ./parser_frame_modtype_nil.t.exe))))
