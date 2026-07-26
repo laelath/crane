@@ -178,14 +178,40 @@ template <class T> T crane_any_cast(const std::any &a) {
 // through) or a [std::any] holding it (unboxed with [crane_any_cast], which
 // also recovers pair-typed elements whose components were boxed
 // independently -- see [crane_any_cast] above).
+// Detects a "box-like" element (e.g. immer::box<U>): has a value_type, a
+// .get(), and is constructible from its value_type. Used so an erased element
+// (std::any holding U or pair<any,any>) is unboxed to U and *re-boxed*, rather
+// than any_cast directly to box<U> (which throws).
+template <class T, class = void>
+struct crane_is_boxlike : std::false_type {};
+template <class T>
+struct crane_is_boxlike<
+    T, std::void_t<typename T::value_type,
+                   decltype(std::declval<const T &>().get())>>
+    : std::bool_constant<
+          std::is_constructible_v<T, typename T::value_type>> {};
+
 template <class Dst, class Src> Dst crane_container_cast(Src &&src) {
   using Elt = typename Dst::value_type;
   Dst dst;
   for (auto &&_e : src) {
-    if constexpr (std::is_same_v<std::decay_t<decltype(_e)>, Elt>) {
-      dst.insert(dst.end(), _e);
+    Elt _elt = [&]() -> Elt {
+      if constexpr (std::is_same_v<std::decay_t<decltype(_e)>, Elt>)
+        return _e;
+      else if constexpr (crane_is_boxlike<Elt>::value) {
+        using U = typename Elt::value_type;
+        const std::any &_a = _e; // box<any> -> const any&, or any -> any
+        return Elt(crane_any_cast<U>(_a));
+      } else
+        return crane_any_cast<Elt>(_e);
+    }();
+    // Mutable STL-like containers (deque/vector) append in place; immutable
+    // persistent containers (e.g. immer::flex_vector) return a new value from
+    // push_back, so reassign instead.
+    if constexpr (requires(Dst d, Elt v) { d.insert(d.end(), v); }) {
+      dst.insert(dst.end(), std::move(_elt));
     } else {
-      dst.insert(dst.end(), crane_any_cast<Elt>(_e));
+      dst = std::move(dst).push_back(std::move(_elt));
     }
   }
   return dst;
