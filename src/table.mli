@@ -663,6 +663,17 @@ val find_custom_match : ml_branch array -> string
 (** Look up the match template for an inductive directly by GlobRef. *)
 val find_custom_match_by_ref : GlobRef.t -> string option
 
+(** Completeness-aware element wrapping (WRAP.md). Look up the [Boxed Element]
+    wrapper template (e.g. ["immer::box<%t0>"]) for a custom container. *)
+val find_boxed_wrapper_opt : GlobRef.t -> string option
+
+(** Record an inductive that recurses through a boxed-element container. *)
+val add_boxed_recursive_ind : GlobRef.t -> unit
+
+(** Whether an inductive recurses through a boxed-element container, so that any
+    element type mentioning it must be boxed for C++ type-consistency. *)
+val is_boxed_recursive_ind : GlobRef.t -> bool
+
 (** Structured accessor for projecting a field from a value of a custom type. *)
 type accessor = AccMember of string | AccDeref
 
@@ -789,6 +800,7 @@ val extract_constant_foreign : qualid -> string -> unit
     @param optstr  optional C++ match template string for custom pattern matching
     @param imports list of C++ headers to [#include] when this type is used *)
 val extract_inductive :
+  ?boxed:string ->
   qualid -> string -> string list -> string option -> string list -> unit
 
 (** Extract monad with bind and return operations.

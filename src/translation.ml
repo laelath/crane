@@ -3820,6 +3820,27 @@ and gen_expr ?(expected_ty : cpp_type option) env (ml_e : ml_ast) : cpp_expr =
           in
           (* Create tvar names for the template lambda *)
           let tvar_name i = "_T" ^ string_of_int i in
+          (* Completeness-aware element wrapping (WRAP.md) helpers for the
+             concept/constraint rendering path below. *)
+          let rec ml_mentions_boxed = function
+            | Miniml.Tglob (r, args, _) ->
+              Table.is_boxed_recursive_ind r || List.exists ml_mentions_boxed args
+            | Miniml.Tmeta {contents = Some t'} -> ml_mentions_boxed t'
+            | Miniml.Tarr (a, b) -> ml_mentions_boxed a || ml_mentions_boxed b
+            | _ -> false
+          in
+          let replace_t0 wrapper elem_str =
+            let b = Buffer.create (String.length wrapper) in
+            let n = String.length wrapper in
+            let i = ref 0 in
+            while !i < n do
+              if !i + 2 < n && wrapper.[!i] = '%' && wrapper.[!i + 1] = 't'
+                 && wrapper.[!i + 2] = '0'
+              then (Buffer.add_string b elem_str; i := !i + 3)
+              else (Buffer.add_char b wrapper.[!i]; incr i)
+            done;
+            Buffer.contents b
+          in
           (* Render an ML type as a C++ value type string using local tvar
              names. Inductives must stay bare values here; recursive ownership
              is represented only inside constructor fields. *)
@@ -3866,6 +3887,38 @@ and gen_expr ?(expected_ty : cpp_type option) env (ml_e : ml_ast) : cpp_expr =
                     Buffer.add_string
                       buf
                       (String.sub custom_str i (digit_end - i));
+                  subst digit_end )
+                else if
+                  i + 5 <= len && String.sub custom_str i 5 = "%elem"
+                then (
+                  (* [%elem] / [%elem{i}]: element type, boxed when it recurses
+                     through this boxed-element container. *)
+                  let after = i + 5 in
+                  let rec find_end j =
+                    if j < len && custom_str.[j] >= '0' && custom_str.[j] <= '9'
+                    then find_end (j + 1)
+                    else j
+                  in
+                  let digit_end = find_end after in
+                  let idx =
+                    if digit_end > after then
+                      int_of_string
+                        (String.sub custom_str after (digit_end - after))
+                    else 0
+                  in
+                  ( if idx < n_rendered then
+                      let elem_str = rendered_ts.(idx) in
+                      let ts_arr = Array.of_list ts in
+                      match Table.find_boxed_wrapper_opt g with
+                      | Some w
+                        when idx < Array.length ts_arr
+                             && ml_mentions_boxed ts_arr.(idx) ->
+                        Buffer.add_string buf (replace_t0 w elem_str)
+                      | _ -> Buffer.add_string buf elem_str
+                    else
+                      Buffer.add_string
+                        buf
+                        (String.sub custom_str i (digit_end - i)) );
                   subst digit_end )
                 else (
                   Buffer.add_char buf custom_str.[i];
@@ -4174,7 +4227,7 @@ and gen_expr ?(expected_ty : cpp_type option) env (ml_e : ml_ast) : cpp_expr =
           (* [expr] came out as the erased [deque<std::any>] from the
              MLrel/MLmagic path; rebuild it as the concrete element container. *)
           Table.mark_needs_erase_fn ();
-          CPPcontainer_cast (clean_ct, expr)
+          CPPcontainer_cast (clean_ct, expr, false)
         | _ -> expr
       end
     in
@@ -6115,7 +6168,29 @@ and eta_fun env f args =
           in
           if needs_concrete then begin
             Table.mark_needs_erase_fn ();
-            CPPcontainer_cast (clean_cpp_ty, inner)
+            (* When the callee's OWN declared (unsubstituted) parameter type
+               is still generic here (a template function like
+               [nodupKeys<T1>]), its C++ declaration never boxes the element
+               (a bare type variable never recurses).  This call site's
+               [clean_cpp_ty] was built from the call-site-substituted
+               concrete type though, so it may judge the (now concrete,
+               possibly recursive) element as boxed — disagreeing with the
+               generic declaration and breaking template argument deduction.
+               Suppress boxing here to match the declaration. *)
+            let rec ml_type_contains_tvar = function
+              | Miniml.Tvar _ | Miniml.Tvar' _ -> true
+              | Miniml.Tarr (a, b) ->
+                ml_type_contains_tvar a || ml_type_contains_tvar b
+              | Miniml.Tglob (_, ts, _) -> List.exists ml_type_contains_tvar ts
+              | Miniml.Tmeta {contents = Some t} -> ml_type_contains_tvar t
+              | _ -> false
+            in
+            let callee_generic_here =
+              match List.nth_opt fn_param_ml_tys_orig i with
+              | Some t -> ml_type_contains_tvar t
+              | None -> false
+            in
+            CPPcontainer_cast (clean_cpp_ty, inner, callee_generic_here)
           end
           else inner
         | _ -> CPPany_cast (cpp_ty, as_value ()) )

@@ -57,12 +57,20 @@ open Cpp_ind
             preserved verbatim. *)
 let qualify_custom_template custom_str args qualify_type =
   let len = String.length custom_str in
+  (* [%elem]/[%elemN] placeholders (completeness-aware element wrapping, see
+     WRAP.md) are treated like [%t0]/[%tN] here: this path only qualifies
+     member types for module-signature concept checks, where the boxing
+     distinction is immaterial (immer::box converts implicitly to/from its
+     wrapped type). *)
+  let is_prefix p i =
+    i + String.length p <= len && String.sub custom_str i (String.length p) = p
+  in
   let rec parse i result =
     if i >= len then
       result
-    else if i <= len - 3 && custom_str.[i] = '%' && custom_str.[i + 1] = 't'
+    else if is_prefix "%elem" i || (i <= len - 3 && custom_str.[i] = '%' && custom_str.[i + 1] = 't')
     then
-      let digit_start = i + 2 in
+      let digit_start = if is_prefix "%elem" i then i + 5 else i + 2 in
       let rec find_digit_end j =
         if j < len && custom_str.[j] >= '0' && custom_str.[j] <= '9' then
           find_digit_end (j + 1)
@@ -70,11 +78,13 @@ let qualify_custom_template custom_str args qualify_type =
           j
       in
       let digit_end = find_digit_end digit_start in
-      if digit_end > digit_start then
-        let num_str =
-          String.sub custom_str digit_start (digit_end - digit_start)
+      if digit_end > digit_start || is_prefix "%elem" i then
+        let idx =
+          if digit_end > digit_start then
+            int_of_string
+              (String.sub custom_str digit_start (digit_end - digit_start))
+          else 0
         in
-        let idx = int_of_string num_str in
         if idx < List.length args then
           parse digit_end (result ++ qualify_type (List.nth args idx))
         else

@@ -390,6 +390,7 @@ type custom_case =
   | CCty
   | CCbody of int
   | CCty_arg of int
+  | CCelem of int
   | CCbr_var of int * int
   | CCbr_var_ty of int * int
   | CCstring of string
@@ -530,12 +531,60 @@ let expand_custom_chunks parser cmds =
     command list. *)
 let expand_numbered_args esc f = expand_custom_chunks (parse_numbered_args esc f)
 
+(* Does a C++ type structurally mention an inductive that recurses through a
+   boxed-element container?  If so it must be boxed as such a container's
+   element, everywhere, for type-consistency. *)
+let rec cpp_type_mentions_boxed_recursive t =
+  match t with
+  | Tglob (r, args, _) ->
+    Table.is_boxed_recursive_ind r
+    || List.exists cpp_type_mentions_boxed_recursive args
+  | Tnamespace (_, t) -> cpp_type_mentions_boxed_recursive t
+  | _ -> false
+
+(* Substitute [%t0] in a wrapper template (e.g. "immer::box<%t0>") with the
+   already-rendered element string. *)
+let subst_wrapper_t0 wrapper elem_str =
+  let buf = Buffer.create (String.length wrapper + String.length elem_str) in
+  let n = String.length wrapper in
+  let i = ref 0 in
+  while !i < n do
+    if !i + 2 < n && wrapper.[!i] = '%' && wrapper.[!i + 1] = 't'
+       && wrapper.[!i + 2] = '0'
+    then begin
+      Buffer.add_string buf elem_str;
+      i := !i + 3
+    end
+    else begin
+      Buffer.add_char buf wrapper.[!i];
+      incr i
+    end
+  done;
+  Buffer.contents buf
+
+(* Suppresses [%elem] boxing while rendering a [crane_container_cast] target
+   type.  That cast reconstructs a concrete container type from an erased
+   [std::any] representation to match a CALLEE's declared parameter type; when
+   the callee is a template function generic over the element (e.g.
+   [nodupKeys<T1>]), its declaration never boxes (a bare [Tvar] never
+   recurses), so the cast target must stay unboxed too, even though this
+   call site's substituted element type (e.g. [Json_value]) would otherwise
+   be judged boxed-recursive. *)
+let suppress_elem_boxing = ref false
+
 (** Expand double-argument binder placeholders (e.g. [%b0a1]) in a command
     list. *)
 let expand_custom_binders esc1 esc2 f = expand_custom_chunks (parse_custom_numbered_binders esc1 esc2 f)
 
 (** Expand fixed-name placeholders (e.g. [%scrut], [%ty]) in a command list. *)
 let expand_custom_fixed esc cc = expand_custom_chunks (parse_custom_fixed esc cc)
+
+(** Expand [%elem] / [%elem{i}] placeholders (completeness-aware element
+    wrapping, WRAP.md): like [%t{i}] but rendered boxed when the element type
+    recurses through a boxed-element container. Bare [%elem] means index 0. *)
+let expand_elem_args cmds =
+  let cmds = expand_numbered_args "elem" (fun i -> CCelem i) cmds in
+  expand_custom_fixed "elem" (CCelem 0) cmds
 
 (** Flatten a command list that is known to contain only [CCstring] chunks
     back into a single string. *)
@@ -718,7 +767,9 @@ let rec pp_cpp_type par vl t =
       | Some s when to_inline r ->
         let cmds = parse_numbered_args "a" (fun i -> CCarg i) s in
         let cmds = expand_numbered_args "t" (fun i -> CCty_arg i) cmds in
+        let cmds = expand_elem_args cmds in
         pp_custom
+          ~container:r
           (Pp.string_of_ppcmds (GlobRef.print r) ^ " := " ^ s)
           (empty_env ())
           None
@@ -1019,8 +1070,10 @@ and pp_cpp_expr env args t =
     in
     let cmds = parse_numbered_args "a" (fun i -> CCarg i) substituted in
     let cmds = expand_numbered_args "t" (fun i -> CCty_arg i) cmds in
+    let cmds = expand_elem_args cmds in
     let body_pp =
       pp_custom
+        ~container:ref_name
         (Pp.string_of_ppcmds (GlobRef.print ref_name) ^ " := " ^ custom)
         env None None tys [] val_args [] [] cmds
     in
@@ -1116,7 +1169,9 @@ and pp_cpp_expr env args t =
       gen_block_iife x custom tys []
     else
     let cmds = parse_numbered_args "t" (fun i -> CCty_arg i) custom in
+    let cmds = expand_elem_args cmds in
     pp_custom
+      ~container:x
       (Pp.string_of_ppcmds (GlobRef.print x) ^ " := " ^ custom)
       env
       None
@@ -1338,6 +1393,7 @@ and pp_cpp_expr env args t =
     else
       let cmds = parse_numbered_args "a" (fun i -> CCarg i) s in
       let cmds = expand_numbered_args "t" (fun i -> CCty_arg i) cmds in
+      let cmds = expand_elem_args cmds in
       let arg_types =
         try
           let ml_ty = Table.find_type n in
@@ -1362,6 +1418,7 @@ and pp_cpp_expr env args t =
         with _ -> []
       in
       pp_custom
+        ~container:n
         (Pp.string_of_ppcmds (GlobRef.print n) ^ " := " ^ s)
         env
         None
@@ -2026,9 +2083,13 @@ and pp_cpp_expr env args t =
       ++ inner
       ++ str ")"
     end
-  | CPPcontainer_cast (ty, e) ->
+  | CPPcontainer_cast (ty, e, suppress_boxing) ->
+    let saved = !suppress_elem_boxing in
+    if suppress_boxing then suppress_elem_boxing := true;
+    let ty_pp = pp_cpp_type false [] ty in
+    suppress_elem_boxing := saved;
     str "crane_container_cast<"
-    ++ pp_cpp_type false [] ty
+    ++ ty_pp
     ++ str ">("
     ++ pp_cpp_expr env args e
     ++ str ")"
@@ -2243,6 +2304,7 @@ and pp_cpp_stmt env args = function
     in
     let cmds = parse_numbered_args "a" (fun i -> CCarg i) flat in
     let cmds = expand_numbered_args "t" (fun i -> CCty_arg i) cmds in
+    let cmds = expand_elem_args cmds in
     (* Render: type declaration + template body as statements *)
     let decl_pp =
       pp_cpp_type false [] result_ty
@@ -2252,6 +2314,7 @@ and pp_cpp_stmt env args = function
     in
     let body_pp =
       pp_custom
+        ~container:_ref
         ("block custom " ^ Pp.string_of_ppcmds (GlobRef.print _ref))
         env None None tyargs [] args [] [] cmds
     in
@@ -2699,7 +2762,7 @@ and wrap_any_cast_if_needed expr expr_printed expected_ty vl =
     @param arg_types  expected types for each arg (for any-cast wrapping)
     @param vl      type variable names in scope
     @param cmds    parsed placeholder token list to substitute *)
-and pp_custom custom env typ t tyargs cases args arg_types vl cmds =
+and pp_custom ?container custom env typ t tyargs cases args arg_types vl cmds =
   (* When CCscrut overrides expected_ty to pair<any,any> (because the scrutinee
      is a std::any-typed variable and the pair is built by concat_tuple), the
      tail variable (second branch param) will have type std::any at runtime.
@@ -2892,6 +2955,39 @@ and pp_custom custom env typ t tyargs cases args arg_types vl cmds =
           | Some ty -> pp_cpp_type false vl ty
           | None -> pp_cpp_type false vl Tany
         )
+    | CCelem i ->
+      (* Like CCty_arg, but wrap the element in the container's [Boxed Element]
+         wrapper when the element recurses through a boxed-element container. *)
+      let elem_ty =
+        match List.nth_opt tyargs i with Some ty -> ty | None -> Tany
+      in
+      let base =
+        if !outer_any_pair_overrode then pp_cpp_type false vl Tany
+        else pp_cpp_type false vl elem_ty
+      in
+      let container_ref =
+        match container with
+        | Some _ -> container
+        | None ->
+          ( match typ with
+          | Some (Tglob (g, _, _)) -> Some g
+          | Some (Tnamespace (_, Tglob (g, _, _))) -> Some g
+          | _ -> None )
+      in
+      ( match container_ref with
+      | Some g
+        when (not !outer_any_pair_overrode)
+             && (not !suppress_elem_boxing)
+             && cpp_type_mentions_boxed_recursive elem_ty ->
+        let ind =
+          match g with
+          | GlobRef.ConstructRef (ip, _) -> GlobRef.IndRef ip
+          | _ -> g
+        in
+        ( match Table.find_boxed_wrapper_opt ind with
+        | Some w -> str (subst_wrapper_t0 w (Pp.string_of_ppcmds base))
+        | None -> base )
+      | _ -> base )
     | CCbr_var (i, j) ->
       ( try
           let ids, _, _ = List.nth cases i in

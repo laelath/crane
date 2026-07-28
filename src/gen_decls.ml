@@ -3836,6 +3836,25 @@ let ml_type_has_nested_self_ref ~ind_ref ml_ty =
     List.exists has_self_ref args
   | _ -> false
 
+(** Completeness-aware element wrapping (WRAP.md): if a constructor field of
+    [ind_ref] recurses THROUGH a boxed-element container (a container carrying a
+    [Boxed Element] wrapper, e.g. [list <self>] where [list -> immer::flex_vector]),
+    record [ind_ref] as an inductive that must be boxed as a container element
+    everywhere it occurs, so its C++ representation is type-consistent. Call this
+    for every constructor field type. *)
+let maybe_record_boxed_recursive_ind ~ind_ref ml_ty =
+  let rec find_boxed_rec t =
+    match t with
+    | Miniml.Tglob (g, args, _) ->
+      ( match Table.find_boxed_wrapper_opt g with
+      | Some _ when ml_type_has_nested_self_ref ~ind_ref t -> true
+      | _ -> List.exists find_boxed_rec args )
+    | Miniml.Tarr (a, b) -> find_boxed_rec a || find_boxed_rec b
+    | Miniml.Tmeta {contents = Some t'} -> find_boxed_rec t'
+    | _ -> false
+  in
+  if find_boxed_rec ml_ty then Table.add_boxed_recursive_ind ind_ref
+
 (** Check whether the self/mutual reference inside [ml_ty] is uniform
     (i.e. its type arguments are exactly the parent's type parameters
     in order).  Non-uniform recursion needs [shared_ptr]. *)
@@ -4085,6 +4104,8 @@ let gen_ind_header_v2
                              list(tree)   → shared_ptr<List<tree>>.
                         The body sees *a0 at the bare type directly with no
                         element-wise conversion needed. *)
+                     (* Completeness-aware element wrapping (WRAP.md). *)
+                     maybe_record_boxed_recursive_ind ~ind_ref:name ty;
                      let cpp_ty =
                        if ml_type_has_nested_self_ref ~ind_ref:name ty then
                          let bare_cpp_ty =
@@ -4620,6 +4641,7 @@ let gen_ind_header_v2
                   vars
                   ty
               in
+              maybe_record_boxed_recursive_ind ~ind_ref:name ty;
               let storage_ty =
                 if ml_type_has_nested_self_ref ~ind_ref:name ty then
                   (* Use bare (no-ns) type so factory param and storage are
@@ -4867,6 +4889,7 @@ let gen_ind_header_v2
                         let storage_ty =
                           convert_ml_type_to_cpp_type (empty_env ()) ~ns:(Refset'.singleton name) var_names ty
                         in
+                        maybe_record_boxed_recursive_ind ~ind_ref:name ty;
                         if ml_type_has_nested_self_ref ~ind_ref:name ty then
                           if is_coinductive then Tshared_ptr bare_ty
                           else Tshared_ptr bare_ty

@@ -2029,6 +2029,33 @@ let custom_matchs = Summary.ref Refmap'.empty ~name:"CraneExtrCustomMatchs"
 
 let add_custom_match r s = custom_matchs := Refmap'.add r s !custom_matchs
 
+(* Completeness-aware element wrapping (see WRAP.md).
+
+   [boxed_wrappers] maps a custom container inductive (e.g. [list] mapped to
+   [immer::flex_vector]) to the wrapper template applied to its element at
+   *recursive* occurrences only (e.g. ["immer::box<%t0>"]). Declared with the
+   [Boxed Element "..."] clause of [Crane Extract Inductive]. The container's
+   type/nil templates spell the (possibly wrapped) element with [%elem]; the
+   match/cons templates keep [%t0]/[%aN] (bare — relying on the wrapper's
+   implicit conversions), so nothing is boxed unless the element is recursive. *)
+let boxed_wrappers = Summary.ref Refmap'.empty ~name:"CraneExtrBoxedWrap"
+
+let add_boxed_wrapper r s = boxed_wrappers := Refmap'.add r s !boxed_wrappers
+
+let find_boxed_wrapper_opt r = Refmap'.find_opt r !boxed_wrappers
+
+(* Set of inductives that recurse *through* a boxed-element container (e.g.
+   [json_value] with a [list json_value] field). Populated during inductive
+   codegen; an element type that structurally mentions one of these is
+   incomplete at a container-naming site and must be boxed everywhere. Not
+   persisted: recomputed within each extraction run. *)
+let boxed_recursive_inds = Summary.ref Refset'.empty ~name:"CraneExtrBoxedRec"
+
+let add_boxed_recursive_ind r =
+  boxed_recursive_inds := Refset'.add r !boxed_recursive_inds
+
+let is_boxed_recursive_ind r = Refset'.mem r !boxed_recursive_inds
+
 (** Extracts the inductive reference from a match pattern array by inspecting
     the first branch's constructor. Raises [Not_found] if not possible. *)
 let indref_of_match pv =
@@ -2195,6 +2222,13 @@ let in_custom_matchs : GlobRef.t * string -> obj =
        ~cache:(fun (r, s) -> add_custom_match r s)
        ~subst:(Some (fun (subs, (r, s)) -> (fst (subst_global subs r), s)))
 
+let in_boxed_wrappers : GlobRef.t * string -> obj =
+  declare_object
+  @@ superglobal_object_nodischarge
+       "Crane ML extractions boxed element wrappers"
+       ~cache:(fun (r, s) -> add_boxed_wrapper r s)
+       ~subst:(Some (fun (subs, (r, s)) -> (fst (subst_global subs r), s)))
+
 (* Grammar entries. *)
 
 (* Custom imports are now tracked per-GlobRef rather than globally. When a [From
@@ -2330,7 +2364,7 @@ let extract_constant_import inline r ids s imports =
 
 (** Registers a custom inductive type extraction with constructor mappings and
     optional match template. *)
-let extract_inductive r s l optstr imports =
+let extract_inductive ?boxed r s l optstr imports =
   check_inside_section ();
   let g = Smartlocate.global_with_alias r in
   Dumpglob.add_glob ?loc:r.CAst.loc g;
@@ -2347,6 +2381,7 @@ let extract_inductive r s l optstr imports =
     Lib.add_leaf (inline_extraction (true, [g]));
     Lib.add_leaf (in_customs (g, [], s));
     Option.iter (fun s -> Lib.add_leaf (in_custom_matchs (g, s))) optstr;
+    Option.iter (fun w -> Lib.add_leaf (in_boxed_wrappers (g, w))) boxed;
     List.iteri
       (fun j s ->
         let g = GlobRef.ConstructRef (ip, succ j) in
