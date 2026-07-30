@@ -1,6 +1,7 @@
 #ifndef INCLUDED_LOOPIFY_LIST_PAIRING
 #define INCLUDED_LOOPIFY_LIST_PAIRING
 
+#include "crane_fn.h"
 #include <any>
 #include <memory>
 #include <utility>

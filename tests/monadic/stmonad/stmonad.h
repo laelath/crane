@@ -1,6 +1,7 @@
 #ifndef INCLUDED_STMONAD
 #define INCLUDED_STMONAD
 
+#include "crane_fn.h"
 #include <algorithm>
 #include <any>
 #include <concepts>

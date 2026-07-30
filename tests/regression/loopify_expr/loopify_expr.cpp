@@ -51,7 +51,7 @@ uint64_t LoopifyExpr::sum_shapes(
           }
         }();
         _stack.emplace_back(_Resume_Cons{val});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -95,7 +95,7 @@ std::pair<std::pair<uint64_t, uint64_t>, uint64_t> LoopifyExpr::count_by_shape(
         const auto &[a0, a1] =
             std::get<typename List<LoopifyExpr::shape>::Cons>(l.v());
         _stack.emplace_back(_Cont_Cons{a0});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Cont_Cons>(_frame));

@@ -1,6 +1,7 @@
 #ifndef INCLUDED_DEEP_APP
 #define INCLUDED_DEEP_APP
 
+#include "crane_fn.h"
 #include <any>
 #include <memory>
 #include <type_traits>
@@ -141,7 +142,7 @@ struct DeepApp {
         } else {
           const auto &[a0, a1] = std::get<typename mylist<T1>::Mycons>(m.v());
           _stack.emplace_back(_Resume_Mycons{*a1, a0});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       } else {
         auto _f = std::move(std::get<_Resume_Mycons>(_frame));
@@ -186,7 +187,7 @@ struct DeepApp {
         } else {
           const auto &[a0, a1] = std::get<typename mylist<T1>::Mycons>(m.v());
           _stack.emplace_back(_Resume_Mycons{*a1, a0});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       } else {
         auto _f = std::move(std::get<_Resume_Mycons>(_frame));
@@ -235,7 +236,7 @@ struct DeepApp {
         } else {
           const auto &[a0, a1] = std::get<typename mylist<T1>::Mycons>(l1.v());
           _stack.emplace_back(_Resume_Mycons{a0});
-          _stack.emplace_back(_Enter{std::move(l2), a1.get()});
+          _stack.emplace_back(_Enter{std::move(l2), crane_raw(a1)});
         }
       } else {
         auto _f = std::move(std::get<_Resume_Mycons>(_frame));
@@ -279,7 +280,7 @@ struct DeepApp {
         } else {
           const auto &[a0, a1] = std::get<typename mylist<T1>::Mycons>(l.v());
           _stack.emplace_back(_Resume_Mycons{f(a0)});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       } else {
         auto _f = std::move(std::get<_Resume_Mycons>(_frame));
@@ -325,7 +326,7 @@ struct DeepApp {
         } else {
           const auto &[a0, a1] = std::get<typename mylist<T1>::Mycons>(l.v());
           _stack.emplace_back(_Resume_Mycons{});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       } else {
         auto _f = std::move(std::get<_Resume_Mycons>(_frame));

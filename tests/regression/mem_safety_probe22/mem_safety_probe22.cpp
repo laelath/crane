@@ -39,8 +39,8 @@ uint64_t MemSafetyProbe22::tree_sum(
       } else {
         const auto &[a0, a1, a2] =
             std::get<typename MemSafetyProbe22::tree::Node>(t.v());
-        _stack.emplace_back(_After_Node{a0.get(), a1});
-        _stack.emplace_back(_Enter{a2.get()});
+        _stack.emplace_back(_After_Node{crane_raw(a0), a1});
+        _stack.emplace_back(_Enter{crane_raw(a2)});
       }
     } else if (std::holds_alternative<_After_Node>(_frame)) {
       auto _f = std::move(std::get<_After_Node>(_frame));
@@ -96,8 +96,8 @@ std::pair<MemSafetyProbe22::tree, uint64_t> MemSafetyProbe22::sum_and_rebuild(
       } else {
         const auto &[a0, a1, a2] =
             std::get<typename MemSafetyProbe22::tree::Node>(t.v());
-        _stack.emplace_back(_Cont_Node{a1, a2.get()});
-        _stack.emplace_back(_Enter{a0.get()});
+        _stack.emplace_back(_Cont_Node{a1, crane_raw(a2)});
+        _stack.emplace_back(_Enter{crane_raw(a0)});
       }
     } else if (std::holds_alternative<_Cont_Node>(_frame)) {
       auto _f = std::move(std::get<_Cont_Node>(_frame));
@@ -159,8 +159,8 @@ MemSafetyProbe22::tree MemSafetyProbe22::double_tree(
       } else {
         const auto &[a0, a1, a2] =
             std::get<typename MemSafetyProbe22::tree::Node>(t.v());
-        _stack.emplace_back(_After_Node{a0.get(), (a1 * UINT64_C(2))});
-        _stack.emplace_back(_Enter{a2.get()});
+        _stack.emplace_back(_After_Node{crane_raw(a0), (a1 * UINT64_C(2))});
+        _stack.emplace_back(_Enter{crane_raw(a2)});
       }
     } else if (std::holds_alternative<_After_Node>(_frame)) {
       auto _f = std::move(std::get<_After_Node>(_frame));
@@ -218,8 +218,9 @@ uint64_t MemSafetyProbe22::weighted_sum(
       } else {
         const auto &[a0, a1, a2] =
             std::get<typename MemSafetyProbe22::tree::Node>(t.v());
-        _stack.emplace_back(_After_Node{(w + UINT64_C(1)), a0.get(), (a1 * w)});
-        _stack.emplace_back(_Enter{(w + UINT64_C(1)), a2.get()});
+        _stack.emplace_back(
+            _After_Node{(w + UINT64_C(1)), crane_raw(a0), (a1 * w)});
+        _stack.emplace_back(_Enter{(w + UINT64_C(1)), crane_raw(a2)});
       }
     } else if (std::holds_alternative<_After_Node>(_frame)) {
       auto _f = std::move(std::get<_After_Node>(_frame));
@@ -340,8 +341,8 @@ MemSafetyProbe22::tree MemSafetyProbe22::mirror(
       } else {
         const auto &[a0, a1, a2] =
             std::get<typename MemSafetyProbe22::tree::Node>(t.v());
-        _stack.emplace_back(_After_Node{a2.get(), a1});
-        _stack.emplace_back(_Enter{a0.get()});
+        _stack.emplace_back(_After_Node{crane_raw(a2), a1});
+        _stack.emplace_back(_Enter{crane_raw(a0)});
       }
     } else if (std::holds_alternative<_After_Node>(_frame)) {
       auto _f = std::move(std::get<_After_Node>(_frame));
@@ -398,10 +399,10 @@ MemSafetyProbe22::insert(const MemSafetyProbe22::tree &t,
             std::get<typename MemSafetyProbe22::tree::Node>(t.v());
         if (x <= a1) {
           _stack.emplace_back(_Resume1{*a2, a1});
-          _stack.emplace_back(_Enter{a0.get()});
+          _stack.emplace_back(_Enter{crane_raw(a0)});
         } else {
           _stack.emplace_back(_Resume2{a1, *a0});
-          _stack.emplace_back(_Enter{a2.get()});
+          _stack.emplace_back(_Enter{crane_raw(a2)});
         }
       }
     } else if (std::holds_alternative<_Resume1>(_frame)) {
@@ -425,7 +426,7 @@ MemSafetyProbe22::tree MemSafetyProbe22::insert_all(MemSafetyProbe22::tree t,
     } else {
       const auto &[a0, a1] =
           std::get<typename List<uint64_t>::Cons>(_loop_xs->v());
-      _loop_xs = a1.get();
+      _loop_xs = crane_raw(a1);
       _loop_t = insert(std::move(_loop_t), a0);
     }
   }
@@ -475,8 +476,9 @@ MemSafetyProbe22::tree MemSafetyProbe22::label_depth(
       } else {
         const auto &[a0, a1, a2] =
             std::get<typename MemSafetyProbe22::tree::Node>(t.v());
-        _stack.emplace_back(_After_Node{(d + UINT64_C(1)), a0.get(), (a1 + d)});
-        _stack.emplace_back(_Enter{(d + UINT64_C(1)), a2.get()});
+        _stack.emplace_back(
+            _After_Node{(d + UINT64_C(1)), crane_raw(a0), (a1 + d)});
+        _stack.emplace_back(_Enter{(d + UINT64_C(1)), crane_raw(a2)});
       }
     } else if (std::holds_alternative<_After_Node>(_frame)) {
       auto _f = std::move(std::get<_After_Node>(_frame));

@@ -1,6 +1,7 @@
 #ifndef INCLUDED_LOOPIFY_PAIRS
 #define INCLUDED_LOOPIFY_PAIRS
 
+#include "crane_fn.h"
 #include <any>
 #include <memory>
 #include <type_traits>
@@ -139,7 +140,7 @@ struct LoopifyPairs {
         } else {
           const auto &[a0, a1] = std::get<typename list<T1>::Cons>(l.v());
           _stack.emplace_back(_Resume_Cons{*a1, a0});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       } else {
         auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -183,7 +184,7 @@ struct LoopifyPairs {
         } else {
           const auto &[a0, a1] = std::get<typename list<T1>::Cons>(l.v());
           _stack.emplace_back(_Resume_Cons{*a1, a0});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       } else {
         auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -228,7 +229,7 @@ struct LoopifyPairs {
         } else {
           const auto &[a0, a1] = std::get<typename list<T1>::Cons>(l.v());
           _stack.emplace_back(_Cont_Cons{a0});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       } else {
         auto _f = std::move(std::get<_Cont_Cons>(_frame));
@@ -292,7 +293,7 @@ struct LoopifyPairs {
           } else {
             const auto &[a00, a10] = std::get<typename list<T2>::Cons>(l2.v());
             _stack.emplace_back(_Resume_Cons{std::make_pair(a0, a00)});
-            _stack.emplace_back(_Enter{a10.get(), a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a10), crane_raw(a1)});
           }
         }
       } else {
@@ -353,7 +354,8 @@ struct LoopifyPairs {
                   std::get<typename list<T3>::Cons>(l3.v());
               _stack.emplace_back(
                   _Resume_Cons{std::make_pair(a0, std::make_pair(a00, a01))});
-              _stack.emplace_back(_Enter{a11.get(), a10.get(), a1.get()});
+              _stack.emplace_back(
+                  _Enter{crane_raw(a11), crane_raw(a10), crane_raw(a1)});
             }
           }
         }
@@ -425,7 +427,7 @@ struct LoopifyPairs {
             const auto &[a00, a10] =
                 std::get<typename list<T1>::Cons>(_sv0.v());
             _stack.emplace_back(_Cont_Cons{a0, a00});
-            _stack.emplace_back(_Enter{a10.get()});
+            _stack.emplace_back(_Enter{crane_raw(a10)});
           }
         }
       } else {
@@ -476,7 +478,7 @@ struct LoopifyPairs {
           const auto &[a0, a1] = std::get<typename list<T1>::Cons>(l.v());
           if (p(a0)) {
             _stack.emplace_back(_Cont1{a0});
-            _stack.emplace_back(_Enter{a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a1)});
           } else {
             _result = std::make_pair(list<T1>::nil(), list<T1>::cons(a0, *a1));
           }
@@ -543,7 +545,7 @@ struct LoopifyPairs {
           const auto &[a0, a1] = std::get<typename list<uint64_t>::Cons>(l.v());
           auto [acc_, y] = f(acc, a0);
           _stack.emplace_back(_Cont_acc_{y});
-          _stack.emplace_back(_Enter{a1.get(), acc_});
+          _stack.emplace_back(_Enter{crane_raw(a1), acc_});
         }
       } else {
         auto _f = std::move(std::get<_Cont_acc_>(_frame));

@@ -1,6 +1,7 @@
 #ifndef INCLUDED_LOOPIFY_SORTING
 #define INCLUDED_LOOPIFY_SORTING
 
+#include "crane_fn.h"
 #include <any>
 #include <memory>
 #include <type_traits>
@@ -142,7 +143,7 @@ struct LoopifySorting {
         } else {
           const auto &[a0, a1] = std::get<typename List<T1>::Cons>(l.v());
           _stack.emplace_back(_Resume_Cons{});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       } else {
         auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -195,7 +196,7 @@ struct LoopifySorting {
             const auto &[a00, a10] =
                 std::get<typename List<T1>::Cons>(_sv0.v());
             _stack.emplace_back(_Cont_Cons{a0, a00});
-            _stack.emplace_back(_Enter{a10.get()});
+            _stack.emplace_back(_Enter{crane_raw(a10)});
           }
         }
       } else {

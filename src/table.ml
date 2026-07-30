@@ -290,6 +290,16 @@ let needs_erase_fn () = !needs_erase_fn_flag
 
 let reset_needs_erase_fn () = needs_erase_fn_flag := false
 
+(* Set when arena-mode codegen emits a [crane::arena_alloc] / relies on the
+   [arena.h] runtime header, so the emitter includes it. *)
+let needs_arena_flag = ref false
+
+let mark_needs_arena () = needs_arena_flag := true
+
+let needs_arena () = !needs_arena_flag
+
+let reset_needs_arena () = needs_arena_flag := false
+
 (** Track whether any reified [ITree<R>] types appear in the output,
     requiring the [crane_itree.h] header. *)
 let itree_header_needed : bool ref = ref false
@@ -1538,6 +1548,68 @@ let reset_loopify : unit -> obj =
        ~subst:None
 
 let reset_extraction_loopify () = Lib.add_leaf (reset_loopify ())
+
+(* --- Arena extraction ------------------------------------------------ *)
+
+(* This option makes recursive inductive types use arena (region) allocation:
+   recursive fields become raw pointers into a region owned by the value, giving
+   O(1) destruction and no reference counting, instead of the default shared_ptr.
+   Opt-in because it deep-copies on value-copy (see docs/arena-extraction-sketch). *)
+let {Goptions.get = arena} =
+  declare_bool_option_and_ref ~key:["Crane"; "Arena"] ~value:false ()
+
+(* Per-inductive arena/noarena table. First set = force-arena, second set =
+   force-noarena. *)
+
+let empty_arena_table = (Refset'.empty, Refset'.empty)
+
+let arena_table = Summary.ref empty_arena_table ~name:"CraneExtrArena"
+
+(** Determines whether an inductive should use arena allocation: forced on/off
+    per inductive, falling back to the global [Crane Arena] setting. *)
+let should_arena r =
+  let yes, no = !arena_table in
+  if Refset'.mem r yes then
+    true
+  else if Refset'.mem r no then
+    false
+  else
+    arena ()
+
+let add_arena_entries b l =
+  let f b = if b then Refset'.add else Refset'.remove in
+  let y, n = !arena_table in
+  arena_table := (List.fold_right (f b) l y, List.fold_right (f (not b)) l n)
+
+let arena_extraction : bool * GlobRef.t list -> obj =
+  declare_object
+  @@ superglobal_object
+       "Crane Extraction Arena"
+       ~cache:(fun (b, l) -> add_arena_entries b l)
+       ~subst:
+         (Some
+            (fun (s, (b, l)) ->
+              (b, List.map (fun x -> fst (subst_global s x)) l) ) )
+       ~discharge:(fun x -> Some x)
+
+let extraction_arena b l =
+  let refs = List.map Smartlocate.global_with_alias l in
+  List.iter
+    (fun r ->
+      match r with
+      | GlobRef.IndRef _ -> ()
+      | _ -> error_inductive r )
+    refs;
+  Lib.add_leaf (arena_extraction (b, refs))
+
+let reset_arena : unit -> obj =
+  declare_object
+  @@ superglobal_object_nodischarge
+       "Crane Reset Extraction Arena"
+       ~cache:(fun () -> arena_table := empty_arena_table)
+       ~subst:None
+
+let reset_extraction_arena () = Lib.add_leaf (reset_arena ())
 
 (* --- Guard Compare --------------------------------------------------- *)
 

@@ -2359,7 +2359,9 @@ let rec convert_ml_type_to_cpp_type
           (* Recursive value-type self/mutual references are owned by their
              containing constructor. The pointed-to type may be incomplete at
              field declaration time, so it still needs indirection, but unique
-             ownership plus explicit clone is enough. *)
+             ownership plus explicit clone is enough. (Arena mode rewrites this
+             shared_ptr to a raw arena pointer at the field-declaration site in
+             gen_decls, so that method return/parameter positions are unaffected.) *)
           Tshared_ptr core
         else if is_self_ref || is_mutual_sibling then
           (* Non-uniform recursion and coinductive self-references use

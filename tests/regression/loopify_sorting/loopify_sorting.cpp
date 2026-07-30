@@ -76,7 +76,7 @@ List<uint64_t> LoopifySorting::insertion_sort(
       } else {
         const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
         _stack.emplace_back(_Resume_Cons{a0});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -261,7 +261,7 @@ std::pair<List<uint64_t>, List<uint64_t>> LoopifySorting::partition(
       } else {
         const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
         _stack.emplace_back(_Cont_Cons{a0});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Cont_Cons>(_frame));
@@ -358,7 +358,7 @@ bool LoopifySorting::is_sorted_aux(uint64_t prev, const List<uint64_t> &l) {
       const auto &[a0, a1] =
           std::get<typename List<uint64_t>::Cons>(_loop_l->v());
       if (_loop_prev <= a0) {
-        _loop_l = a1.get();
+        _loop_l = crane_raw(a1);
         _loop_prev = a0;
       } else {
         return false;
@@ -413,10 +413,10 @@ List<uint64_t> LoopifySorting::remove_duplicates(
           const auto &[a00, a10] =
               std::get<typename List<uint64_t>::Cons>(_sv0.v());
           if (a0 == a00) {
-            _stack.emplace_back(_Enter{a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a1)});
           } else {
             _stack.emplace_back(_Resume1{a0});
-            _stack.emplace_back(_Enter{a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a1)});
           }
         }
       }
@@ -470,14 +470,14 @@ List<uint64_t> LoopifySorting::uniq_sorted_aux(
         const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
         if (seen) {
           if (prev == a0) {
-            _stack.emplace_back(_Enter{a1.get(), true, a0});
+            _stack.emplace_back(_Enter{crane_raw(a1), true, a0});
           } else {
             _stack.emplace_back(_Resume1{a0});
-            _stack.emplace_back(_Enter{a1.get(), true, a0});
+            _stack.emplace_back(_Enter{crane_raw(a1), true, a0});
           }
         } else {
           _stack.emplace_back(_Resume2{a0});
-          _stack.emplace_back(_Enter{a1.get(), true, a0});
+          _stack.emplace_back(_Enter{crane_raw(a1), true, a0});
         }
       }
     } else if (std::holds_alternative<_Resume1>(_frame)) {

@@ -101,6 +101,12 @@ let id_self         = Id.of_string "_self"
 
 (* Method names used with CPPmethod_call / CPPmember *)
 let id_get          = Id.of_string "get"
+
+(* [crane_raw] (crane_fn.h): extracts a raw pointer from either a
+   [std::shared_ptr<T>] or an already-raw [T*] (arena mode), by overload
+   resolution.  Used in place of a bare [.get()] call wherever the extraction
+   target may be either representation. *)
+let id_crane_raw    = Id.of_string "crane_raw"
 let id_v_mut        = Id.of_string "v_mut"
 let id_empty        = Id.of_string "empty"
 let id_emplace_back = Id.of_string "emplace_back"
@@ -349,7 +355,8 @@ let method_checker
  let recv_to_self recv =
    match recv with
    | CPPderef inner ->
-     CPPfun_call (CPPmember (inner, id_get), [])
+     Table.mark_needs_erase_fn ();
+     CPPfun_call (CPPvar id_crane_raw, [inner])
    | _ ->
      CPPunop ("&", recv)
  in
@@ -468,6 +475,7 @@ let rec collect_expr (check : call_checker) expr =
    |CPPglob _
    |CPPvisit
    |CPPmk_shared _
+   |CPParena_alloc _
    |CPPthis
    |CPPshared_from_this _
    |CPPconvertible_to _
@@ -985,8 +993,9 @@ let tail_shadow_init orig_id shadow_ty ty =
     - When the shadow is a pointer and the argument is [*shadow_var]
       (i.e., dereference of one of our own pointer-safe shadows): just use
       [shadow_var] directly since it is already a raw pointer.
-    - When the shadow is a pointer and the argument is [*ptr] for a smart
-      pointer: use [ptr.get()]
+    - When the shadow is a pointer and the argument is [*ptr]: use
+      [crane_raw(ptr)] (works whether [ptr] is a smart pointer or already raw,
+      as under [Crane Arena])
     - When the shadow is a pointer and the argument is a variable: [&arg]
     - Otherwise: pass through unchanged
 
@@ -995,7 +1004,9 @@ let tail_shadow_arg ~shadow_ids shadow_ty arg =
   match shadow_ty, arg with
   | Tptr _, CPPderef (CPPvar id) when List.exists (Id.equal id) shadow_ids ->
     CPPvar id
-  | Tptr _, CPPderef inner -> CPPfun_call (CPPmember (inner, id_get), [])
+  | Tptr _, CPPderef inner ->
+    Table.mark_needs_erase_fn ();
+    CPPfun_call (CPPvar id_crane_raw, [inner])
   | Tptr _, CPPvar _ -> CPPunop ("&", arg)
   | _ -> arg
 
@@ -3107,6 +3118,14 @@ let rec infer_saved_type tparams (env : (Id.t * cpp_type) list) (e : cpp_expr) :
       let tl = infer_saved_type tparams env lhs in
       if tl <> Tunknown then tl
       else infer_saved_type tparams env rhs
+    | CPPfun_call (CPPvar id, [ inner ]) when Id.equal id id_crane_raw ->
+      (* crane_raw(x) returns a raw pointer, whether [x] was a shared_ptr or
+         already raw (arena mode).  Infer from the inner expression. *)
+      let inner_ty = infer_saved_type tparams env inner in
+      ( match inner_ty with
+      | Tptr t -> Tptr t
+      | Tshared_ptr t -> Tptr t
+      | _ -> Tunknown )
     | CPPfun_call (CPPvar f, _) ->
       ( match lookup_var_type env f with
       | Some (Tfun (_, cod)) -> cod
@@ -5604,17 +5623,17 @@ let compute_frame_pointer_safe pointer_safe_varying frames =
     flag_arrays
 
 (** Rewrite frame push expressions so that pointer-safe positions use
-    [&x] (for variables) or [x.get()] (for dereferences) instead of
+    [&x] (for variables) or [crane_raw(x)] (for dereferences) instead of
     deep-copying.  Handles both [_Enter] and [_CallN] pushes.
 
     When [binding_env] is supplied, a [CPPvar x] at a pointer-safe position is
-    looked up: if [x = *(sp)] in the environment, emit [sp.get()] rather than
-    [&x] (which would be a dangling pointer to a local).
+    looked up: if [x = *(sp)] in the environment, emit [crane_raw(sp)] rather
+    than [&x] (which would be a dangling pointer to a local).
 
     @param frame_pointer_safe [(frame_name, bool list)] mapping
     @param frame_sptr  [(frame_name, bool list)] — positions where the
            original saved type is [Tshared_ptr _]. At these positions, emit
-           [.get()] instead of [&] to extract the raw pointer. *)
+           [crane_raw(...)] instead of [&] to extract the raw pointer. *)
 let adjust_frame_push_args ?(binding_env = []) ?(frame_sptr = []) frame_pointer_safe stmts =
   if frame_pointer_safe = [] then stmts
   else
@@ -5624,10 +5643,15 @@ let adjust_frame_push_args ?(binding_env = []) ?(frame_sptr = []) frame_pointer_
       if not safe then arg
       else
       let arg = match arg with CPPmove a -> a | a -> a in
+      let raw_of e =
+        Table.mark_needs_erase_fn ();
+        CPPfun_call (CPPvar id_crane_raw, [e])
+      in
       if is_uptr then
         (* If the argument is a local variable loaded as a const-reference from a
            pointer-safe frame field (const T &x = *_f.field after fix_handler_bindings),
-           take its address (&x) rather than calling .get() on a non-shared_ptr. *)
+           take its address (&x) rather than extracting a raw pointer from a
+           non-pointer local. *)
         (match arg with
          | CPPvar x ->
            (match List.assoc_opt x binding_env with
@@ -5635,8 +5659,8 @@ let adjust_frame_push_args ?(binding_env = []) ?(frame_sptr = []) frame_pointer_
               when Id.to_string f = "_f" ->
               CPPunop ("&", arg)
             | _ ->
-              CPPfun_call (CPPmember (arg, id_get), []))
-         | _ -> CPPfun_call (CPPmember (arg, id_get), []))
+              raw_of arg)
+         | _ -> raw_of arg)
       else
         match arg with
         | CPPderef (CPPvar x) ->
@@ -5645,18 +5669,18 @@ let adjust_frame_push_args ?(binding_env = []) ?(frame_sptr = []) frame_pointer_
              when Id.to_string f = "_f" ->
              CPPunop ("&", CPPvar x)
            | Some (CPPderef sp) ->
-             CPPfun_call (CPPmember (sp, id_get), [])
+             raw_of sp
            | _ ->
-             CPPfun_call (CPPmember (CPPvar x, id_get), []))
+             raw_of (CPPvar x))
         | CPPderef inner ->
-          CPPfun_call (CPPmember (inner, id_get), [])
+          raw_of inner
         | CPPvar x ->
           (match List.assoc_opt x binding_env with
            | Some (CPPderef (CPPmember (CPPvar f, _)))
              when Id.to_string f = "_f" ->
              CPPunop ("&", arg)
            | Some (CPPderef sp) ->
-             CPPfun_call (CPPmember (sp, id_get), [])
+             raw_of sp
            | _ -> CPPunop ("&", arg))
         | _ -> arg
     in

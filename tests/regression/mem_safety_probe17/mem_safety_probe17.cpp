@@ -33,7 +33,7 @@ uint64_t MemSafetyProbe17::sum_list(
             std::get<typename MemSafetyProbe17::mylist<uint64_t>::Mycons>(
                 l.v());
         _stack.emplace_back(_Resume_Mycons{a0});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Mycons>(_frame));
@@ -106,8 +106,9 @@ MemSafetyProbe17::mylist<uint64_t> MemSafetyProbe17::qtree_flatten(
       } else {
         const auto &[a0, a1, a2, a3, a4] =
             std::get<typename MemSafetyProbe17::qtree::QNode>(t.v());
-        _stack.emplace_back(_After_QNode{a3.get(), a1.get(), a0.get(), a2});
-        _stack.emplace_back(_Enter{a4.get()});
+        _stack.emplace_back(
+            _After_QNode{crane_raw(a3), crane_raw(a1), crane_raw(a0), a2});
+        _stack.emplace_back(_Enter{crane_raw(a4)});
       }
     } else if (std::holds_alternative<_After_QNode>(_frame)) {
       auto _f = std::move(std::get<_After_QNode>(_frame));

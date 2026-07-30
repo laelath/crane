@@ -1,6 +1,7 @@
 #ifndef INCLUDED_LOOPIFY_LIST_GENERATION
 #define INCLUDED_LOOPIFY_LIST_GENERATION
 
+#include "crane_fn.h"
 #include <any>
 #include <memory>
 #include <utility>

@@ -43,7 +43,7 @@ bool NatKey::key_eq_dec(
         } else {
           const auto &[a00] = std::get<typename Datatypes::Nat::S>(x0.v());
           _stack.emplace_back(_Cont_S{});
-          _stack.emplace_back(_Enter{a00.get(), a0.get()});
+          _stack.emplace_back(_Enter{crane_raw(a00), crane_raw(a0)});
         }
       }
     } else {

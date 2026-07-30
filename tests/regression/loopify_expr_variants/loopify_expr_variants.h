@@ -1,6 +1,7 @@
 #ifndef INCLUDED_LOOPIFY_EXPR_VARIANTS
 #define INCLUDED_LOOPIFY_EXPR_VARIANTS
 
+#include "crane_fn.h"
 #include <any>
 #include <memory>
 #include <type_traits>

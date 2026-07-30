@@ -37,7 +37,7 @@ List<uint64_t> LoopifyListOfLists::intercalate(
           _result = std::move(a0);
         } else {
           _stack.emplace_back(_Resume_Cons{a0});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       }
     } else {
@@ -79,12 +79,12 @@ List<uint64_t> LoopifyListOfLists::map_hd(
         const auto &[a0, a1] =
             std::get<typename List<List<uint64_t>>::Cons>(ll.v());
         if (std::holds_alternative<typename List<uint64_t>::Nil>(a0.v())) {
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         } else {
           const auto &[a00, a10] =
               std::get<typename List<uint64_t>::Cons>(a0.v());
           _stack.emplace_back(_Resume_Cons{a00});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       }
     } else {
@@ -126,12 +126,12 @@ List<List<uint64_t>> LoopifyListOfLists::map_tl(
         const auto &[a0, a1] =
             std::get<typename List<List<uint64_t>>::Cons>(ll.v());
         if (std::holds_alternative<typename List<uint64_t>::Nil>(a0.v())) {
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         } else {
           const auto &[a00, a10] =
               std::get<typename List<uint64_t>::Cons>(a0.v());
           _stack.emplace_back(_Resume_Cons{*a10});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       }
     } else {
@@ -153,7 +153,7 @@ bool LoopifyListOfLists::all_empty(const List<List<uint64_t>> &ll) {
       const auto &[a0, a1] =
           std::get<typename List<List<uint64_t>>::Cons>(_loop_ll->v());
       if (std::holds_alternative<typename List<uint64_t>::Nil>(a0.v())) {
-        _loop_ll = a1.get();
+        _loop_ll = crane_raw(a1);
       } else {
         return false;
       }
@@ -252,7 +252,7 @@ uint64_t LoopifyListOfLists::list_len(
       } else {
         const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
         _stack.emplace_back(_Resume_Cons{UINT64_C(1)});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -293,7 +293,7 @@ uint64_t LoopifyListOfLists::total_length(
         const auto &[a0, a1] =
             std::get<typename List<List<uint64_t>>::Cons>(ll.v());
         _stack.emplace_back(_Resume_Cons{list_len(a0)});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -339,7 +339,7 @@ List<uint64_t> LoopifyListOfLists::flatten(
         const auto &[a0, a1] =
             std::get<typename List<List<uint64_t>>::Cons>(ll.v());
         _stack.emplace_back(_Resume_Cons{a0});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -380,7 +380,7 @@ uint64_t LoopifyListOfLists::count_total(
         const auto &[a0, a1] =
             std::get<typename List<List<uint64_t>>::Cons>(ll.v());
         _stack.emplace_back(_Resume_Cons{list_len(a0)});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -421,12 +421,12 @@ List<uint64_t> LoopifyListOfLists::firsts(
         const auto &[a0, a1] =
             std::get<typename List<List<uint64_t>>::Cons>(ll.v());
         if (std::holds_alternative<typename List<uint64_t>::Nil>(a0.v())) {
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         } else {
           const auto &[a00, a10] =
               std::get<typename List<uint64_t>::Cons>(a0.v());
           _stack.emplace_back(_Resume_Cons{a00});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       }
     } else {
@@ -447,7 +447,7 @@ bool LoopifyListOfLists::all_nil(const List<List<uint64_t>> &ll) {
       const auto &[a0, a1] =
           std::get<typename List<List<uint64_t>>::Cons>(_loop_ll->v());
       if (std::holds_alternative<typename List<uint64_t>::Nil>(a0.v())) {
-        _loop_ll = a1.get();
+        _loop_ll = crane_raw(a1);
       } else {
         return false;
       }
@@ -497,7 +497,7 @@ List<std::pair<List<uint64_t>, List<uint64_t>>> LoopifyListOfLists::zip_lists(
           const auto &[a00, a10] =
               std::get<typename List<List<uint64_t>>::Cons>(ll2.v());
           _stack.emplace_back(_Resume_Cons{std::make_pair(a0, a00)});
-          _stack.emplace_back(_Enter{a10.get(), a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a10), crane_raw(a1)});
         }
       }
     } else {
@@ -540,7 +540,7 @@ uint64_t LoopifyListOfLists::max_length(
         const auto &[a0, a1] =
             std::get<typename List<List<uint64_t>>::Cons>(ll.v());
         _stack.emplace_back(_Resume_Cons{list_len(a0)});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Cons>(_frame));

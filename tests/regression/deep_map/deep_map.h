@@ -1,6 +1,7 @@
 #ifndef INCLUDED_DEEP_MAP
 #define INCLUDED_DEEP_MAP
 
+#include "crane_fn.h"
 #include <any>
 #include <memory>
 #include <type_traits>
@@ -156,8 +157,8 @@ struct DeepMap {
           _result = std::move(f);
         } else {
           const auto &[a0, a1, a2] = std::get<typename tree<T1>::Node>(t.v());
-          _stack.emplace_back(_After_Node{a0.get(), *a2, a1, *a0});
-          _stack.emplace_back(_Enter{a2.get()});
+          _stack.emplace_back(_After_Node{crane_raw(a0), *a2, a1, *a0});
+          _stack.emplace_back(_Enter{crane_raw(a2)});
         }
       } else if (std::holds_alternative<_After_Node>(_frame)) {
         auto _f = std::move(std::get<_After_Node>(_frame));
@@ -219,8 +220,8 @@ struct DeepMap {
           _result = std::move(f);
         } else {
           const auto &[a0, a1, a2] = std::get<typename tree<T1>::Node>(t.v());
-          _stack.emplace_back(_After_Node{a0.get(), *a2, a1, *a0});
-          _stack.emplace_back(_Enter{a2.get()});
+          _stack.emplace_back(_After_Node{crane_raw(a0), *a2, a1, *a0});
+          _stack.emplace_back(_Enter{crane_raw(a2)});
         }
       } else if (std::holds_alternative<_After_Node>(_frame)) {
         auto _f = std::move(std::get<_After_Node>(_frame));
@@ -282,8 +283,8 @@ struct DeepMap {
           _result = tree<T2>::leaf();
         } else {
           const auto &[a0, a1, a2] = std::get<typename tree<T1>::Node>(t.v());
-          _stack.emplace_back(_After_Node{a0.get(), f(a1)});
-          _stack.emplace_back(_Enter{a2.get()});
+          _stack.emplace_back(_After_Node{crane_raw(a0), f(a1)});
+          _stack.emplace_back(_Enter{crane_raw(a2)});
         }
       } else if (std::holds_alternative<_After_Node>(_frame)) {
         auto _f = std::move(std::get<_After_Node>(_frame));

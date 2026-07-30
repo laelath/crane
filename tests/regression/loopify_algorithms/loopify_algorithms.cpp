@@ -29,7 +29,7 @@ uint64_t LoopifyAlgorithms::len_impl(
       } else {
         const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
         _stack.emplace_back(_Resume_Cons{});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -146,7 +146,7 @@ List<std::pair<uint64_t, uint64_t>> LoopifyAlgorithms::run_length_encode(
       } else {
         const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
         _stack.emplace_back(_Cont_Cons{a0});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Cont_Cons>(_frame));
@@ -211,7 +211,7 @@ List<uint64_t> LoopifyAlgorithms::prefix_sums(
       } else {
         const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
         _stack.emplace_back(_Resume_Cons{acc});
-        _stack.emplace_back(_Enter{a1.get(), (acc + a0)});
+        _stack.emplace_back(_Enter{crane_raw(a1), (acc + a0)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -264,7 +264,7 @@ List<uint64_t> LoopifyAlgorithms::differences(
               std::get<typename List<uint64_t>::Cons>(_sv0.v());
           _stack.emplace_back(
               _Resume_Cons{(((a00 - a0) > a00 ? 0 : (a00 - a0)))});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       }
     } else {
@@ -396,7 +396,7 @@ List<uint64_t> LoopifyAlgorithms::rev_impl(List<uint64_t> acc,
     } else {
       const auto &[a0, a1] =
           std::get<typename List<uint64_t>::Cons>(_loop_l->v());
-      _loop_l = a1.get();
+      _loop_l = crane_raw(a1);
       _loop_acc = List<uint64_t>::cons(a0, std::move(_loop_acc));
     }
   }
@@ -422,8 +422,8 @@ bool LoopifyAlgorithms::list_eq_impl(const List<uint64_t> &l1,
         const auto &[a00, a10] =
             std::get<typename List<uint64_t>::Cons>(_loop_l2->v());
         if (a0 == a00) {
-          _loop_l2 = a10.get();
-          _loop_l1 = a1.get();
+          _loop_l2 = crane_raw(a10);
+          _loop_l1 = crane_raw(a1);
         } else {
           return false;
         }
@@ -476,7 +476,7 @@ List<uint64_t> LoopifyAlgorithms::take_impl(
         } else {
           const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
           _stack.emplace_back(_Resume_Cons{a0});
-          _stack.emplace_back(_Enter{a1.get(), m});
+          _stack.emplace_back(_Enter{crane_raw(a1), m});
         }
       }
     } else {
@@ -529,7 +529,7 @@ List<List<uint64_t>> LoopifyAlgorithms::windows_aux(
             _result = List<List<uint64_t>>::nil();
           } else {
             _stack.emplace_back(_Resume1{take_impl(n, l)});
-            _stack.emplace_back(_Enter{f, a1.get()});
+            _stack.emplace_back(_Enter{f, crane_raw(a1)});
           }
         }
       }
@@ -585,7 +585,7 @@ List<std::pair<uint64_t, uint64_t>> LoopifyAlgorithms::sliding_pairs(
           const auto &[a00, a10] =
               std::get<typename List<uint64_t>::Cons>(_sv0.v());
           _stack.emplace_back(_Resume_Cons{std::make_pair(a0, a00)});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       }
     } else {
@@ -628,7 +628,7 @@ uint64_t LoopifyAlgorithms::max_prefix_sum(
       } else {
         const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
         _stack.emplace_back(_Cont_Cons{a0});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Cont_Cons>(_frame));
@@ -683,7 +683,7 @@ uint64_t LoopifyAlgorithms::weighted_sum(
       } else {
         const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
         _stack.emplace_back(_Resume_Cons{(i * a0)});
-        _stack.emplace_back(_Enter{a1.get(), (i + 1)});
+        _stack.emplace_back(_Enter{crane_raw(a1), (i + 1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -731,7 +731,7 @@ uint64_t LoopifyAlgorithms::step_sum(
           contribution = (a0 * UINT64_C(2));
         }
         _stack.emplace_back(_Resume_Cons{contribution});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -782,7 +782,7 @@ List<uint64_t> LoopifyAlgorithms::suffix_sums(
       } else {
         const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
         _stack.emplace_back(_Cont_Cons{a0});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Cont_Cons>(_frame));

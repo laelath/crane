@@ -33,7 +33,7 @@ uint64_t MemSafetyProbe15::sum_list(
             std::get<typename MemSafetyProbe15::mylist<uint64_t>::Mycons>(
                 l.v());
         _stack.emplace_back(_Resume_Mycons{a0});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Mycons>(_frame));
@@ -86,8 +86,8 @@ MemSafetyProbe15::mylist<uint64_t> MemSafetyProbe15::flatten(
       } else {
         const auto &[a0, a1, a2] =
             std::get<typename MemSafetyProbe15::tree::Node>(t.v());
-        _stack.emplace_back(_After_Node{a0.get(), a1});
-        _stack.emplace_back(_Enter{a2.get()});
+        _stack.emplace_back(_After_Node{crane_raw(a0), a1});
+        _stack.emplace_back(_Enter{crane_raw(a2)});
       }
     } else if (std::holds_alternative<_After_Node>(_frame)) {
       auto _f = std::move(std::get<_After_Node>(_frame));
@@ -143,9 +143,9 @@ MemSafetyProbe15::mylist<uint64_t> MemSafetyProbe15::subtree_sums(
       } else {
         const auto &[a0, a1, a2] =
             std::get<typename MemSafetyProbe15::tree::Node>(t.v());
-        _stack.emplace_back(
-            _After_Node{a0.get(), ((a0->tree_sum() + a1) + a2->tree_sum())});
-        _stack.emplace_back(_Enter{a2.get()});
+        _stack.emplace_back(_After_Node{
+            crane_raw(a0), ((a0->tree_sum() + a1) + a2->tree_sum())});
+        _stack.emplace_back(_Enter{crane_raw(a2)});
       }
     } else if (std::holds_alternative<_After_Node>(_frame)) {
       auto _f = std::move(std::get<_After_Node>(_frame));

@@ -86,7 +86,7 @@ LoopifyTmc::list<uint64_t> LoopifyTmc::prefix_sums(
             std::get<typename LoopifyTmc::list<uint64_t>::Cons>(l.v());
         uint64_t s = (acc + a0);
         _stack.emplace_back(_Resume_Cons{s});
-        _stack.emplace_back(_Enter{a1.get(), s});
+        _stack.emplace_back(_Enter{crane_raw(a1), s});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Cons>(_frame));

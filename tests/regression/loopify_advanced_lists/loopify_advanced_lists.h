@@ -1,6 +1,7 @@
 #ifndef INCLUDED_LOOPIFY_ADVANCED_LISTS
 #define INCLUDED_LOOPIFY_ADVANCED_LISTS
 
+#include "crane_fn.h"
 #include <any>
 #include <memory>
 #include <optional>
@@ -154,7 +155,7 @@ struct LoopifyAdvancedLists {
         } else {
           const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
           _stack.emplace_back(_Resume_Cons{std::move(f(a0))});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       } else {
         auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -197,7 +198,7 @@ struct LoopifyAdvancedLists {
         } else {
           const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
           _stack.emplace_back(_Resume_Cons{p(a0)});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       } else {
         auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -240,7 +241,7 @@ struct LoopifyAdvancedLists {
         } else {
           const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
           _stack.emplace_back(_Resume_Cons{p(a0)});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       } else {
         auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -263,7 +264,7 @@ struct LoopifyAdvancedLists {
         if (p(a0)) {
           return std::make_optional<uint64_t>(a0);
         } else {
-          _loop_l = a1.get();
+          _loop_l = crane_raw(a1);
         }
       }
     }

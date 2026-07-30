@@ -42,7 +42,7 @@ std::pair<uint64_t, uint64_t> LoopifyConditionalRecursion::cached_sum(
           }
         } else {
           _stack.emplace_back(_Cont1{a0});
-          _stack.emplace_back(_Enter{a1.get(), std::optional<uint64_t>()});
+          _stack.emplace_back(_Enter{crane_raw(a1), std::optional<uint64_t>()});
         }
       }
     } else {
@@ -94,7 +94,7 @@ LoopifyConditionalRecursion::find_or_recurse(
           }
         } else {
           _stack.emplace_back(_Cont1{});
-          _stack.emplace_back(_Enter{a1.get(), std::move(target)});
+          _stack.emplace_back(_Enter{crane_raw(a1), std::move(target)});
         }
       }
     } else {
@@ -147,7 +147,7 @@ uint64_t LoopifyConditionalRecursion::nested_cond(
           } else {
             if (a0 <= threshold) {
               _stack.emplace_back(_Cont1{false});
-              _stack.emplace_back(_Enter{a1.get()});
+              _stack.emplace_back(_Enter{crane_raw(a1)});
             } else {
               sub = std::make_pair(UINT64_C(0), true);
               {
@@ -233,8 +233,8 @@ LoopifyConditionalRecursion::multi_return(
           }
         } else {
           _stack.emplace_back(_Cont1{a0});
-          _stack.emplace_back(
-              _Enter{a1.get(), std::optional<std::pair<uint64_t, uint64_t>>()});
+          _stack.emplace_back(_Enter{
+              crane_raw(a1), std::optional<std::pair<uint64_t, uint64_t>>()});
         }
       }
     } else {
@@ -309,7 +309,7 @@ std::pair<uint64_t, uint64_t> LoopifyConditionalRecursion::accum_with_cache(
           }
         } else {
           _stack.emplace_back(_Cont1{a0});
-          _stack.emplace_back(_Enter{a1.get(), std::move(key)});
+          _stack.emplace_back(_Enter{crane_raw(a1), std::move(key)});
         }
       }
     } else {

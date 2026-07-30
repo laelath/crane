@@ -33,7 +33,7 @@ uint64_t MemSafetyProbe18::sum_list(
             std::get<typename MemSafetyProbe18::mylist<uint64_t>::Mycons>(
                 l.v());
         _stack.emplace_back(_Resume_Mycons{a0});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Mycons>(_frame));
@@ -58,7 +58,7 @@ MemSafetyProbe18::fold_left_tree(const MemSafetyProbe18::mylist<uint64_t> &l,
           std::get<typename MemSafetyProbe18::mylist<uint64_t>::Mycons>(
               _loop_l->v());
       _loop_acc = tree::node(std::move(_loop_acc), a0, tree::leaf());
-      _loop_l = a1.get();
+      _loop_l = crane_raw(a1);
     }
   }
 }
@@ -145,7 +145,7 @@ uint64_t MemSafetyProbe18::sum_tree_list(
             typename MemSafetyProbe18::mylist<MemSafetyProbe18::tree>::Mycons>(
             l.v());
         _stack.emplace_back(_Resume_Mycons{a0.tree_sum()});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Mycons>(_frame));

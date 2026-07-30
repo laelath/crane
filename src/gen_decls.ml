@@ -3913,6 +3913,22 @@ let gen_ind_header_v2
     method_candidates
     ind_kind =
   let is_coinductive = ind_kind = Coinductive in
+  (* Arena mode is sound in this first slice only for plain self-recursive value
+     types.  Coinductive types (lazy thunks capturing tail refs) and mutually
+     recursive types (cross-type region pointers, [std::any] destructor) still
+     need shared_ptr, so an arena request on those falls back to the default
+     representation with a warning. *)
+  let arena_ok =
+    if Table.should_arena name && (is_coinductive || is_mutual) then begin
+      Printf.eprintf
+        "Crane Arena: %s is %s; arena extraction is not supported for it yet \
+         (falling back to shared_ptr).\n%!"
+        (Names.GlobRef.print name |> Pp.string_of_ppcmds)
+        (if is_coinductive then "coinductive" else "mutually recursive");
+      false
+    end
+    else Table.should_arena name
+  in
   let templates = List.map (fun n -> (TTtypename, n)) vars in
   let ty_vars = List.mapi (fun i x -> Tvar (i, Some x)) vars in
 
@@ -4127,6 +4143,17 @@ let gen_ind_header_v2
                          | _ -> cpp_ty
                        else cpp_ty
                      in
+                     (* Arena mode: the recursive-field indirection is a raw
+                        pointer into a region, not a shared_ptr.  Confined to the
+                        field declaration so method return/parameter positions are
+                        unaffected. *)
+                     let cpp_ty =
+                       if arena_ok then
+                         match cpp_ty with
+                         | Tshared_ptr inner -> Tptr inner
+                         | _ -> cpp_ty
+                       else cpp_ty
+                     in
                      let field_name = List.nth field_ids j in
                      (Fvar (field_name, cpp_ty), VPublic, SNoTag) )
                    tys_list
@@ -4253,7 +4280,9 @@ let gen_ind_header_v2
           Mutually recursive types use [std::any] to hold different [shared_ptr]
           types.  Returns [[]] for non-recursive or coinductive types. *)
       let iterative_destructor =
-        if is_coinductive then []
+        (* Arena types own their nodes in a region; dropping the region frees
+           everything in O(1), so no per-node iterative destructor is needed. *)
+        if is_coinductive || arena_ok then []
         else
           (** Check whether ML type [t] is a reference to [ref_name] applied to
               the same type variables [ref_vars] (i.e., a direct recursive or
@@ -4755,7 +4784,14 @@ let gen_ind_header_v2
                   if inner = api_ty then arg
                   else gen_type_conversion_expr ~src_ty:api_ty ~dst_ty:inner arg
                 in
-                CPPfun_call (CPPmk_shared inner, [converted])
+                (* Arena mode: the field is a raw arena pointer, so allocate the
+                   node in the ambient arena instead of make_shared. *)
+                if arena_ok then begin
+                  Table.mark_needs_arena ();
+                  CPPfun_call (CPParena_alloc inner, [converted])
+                end
+                else
+                  CPPfun_call (CPPmk_shared inner, [converted])
               | _ when storage_ty = api_ty ->
                 if is_trivially_copyable_type api_ty then var
                 else CPPmove var
@@ -4842,7 +4878,12 @@ let gen_ind_header_v2
             let all_fields_empty =
               Array.for_all (fun tys_list -> tys_list = []) tys
             in
-            if vars = [] || all_fields_empty then []
+            (* Arena mode (first slice): suppress the cross-instantiation
+               converting constructor.  Its deep-copy path still uses make_shared
+               into what are now raw arena-pointer fields; value copies use the
+               default shallow copy (correct: arena values are immutable and
+               share the region).  Arena-aware conversion is future work. *)
+            if vars = [] || all_fields_empty || arena_ok then []
             else
               let render_ty ty =
                 render_cpp_type_for_raw_template

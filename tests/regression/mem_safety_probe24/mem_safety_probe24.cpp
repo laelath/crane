@@ -33,7 +33,7 @@ uint64_t MemSafetyProbe24::sum_list(
             std::get<typename MemSafetyProbe24::mylist<uint64_t>::Mycons>(
                 l.v());
         _stack.emplace_back(_Resume_Mycons{a0});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Mycons>(_frame));
@@ -82,8 +82,8 @@ MemSafetyProbe24::mylist<uint64_t> MemSafetyProbe24::tree_to_list(
       } else {
         const auto &[a0, a1, a2] =
             std::get<typename MemSafetyProbe24::tree::Node>(t.v());
-        _stack.emplace_back(_After_Node{a0.get(), a1});
-        _stack.emplace_back(_Enter{a2.get()});
+        _stack.emplace_back(_After_Node{crane_raw(a0), a1});
+        _stack.emplace_back(_Enter{crane_raw(a2)});
       }
     } else if (std::holds_alternative<_After_Node>(_frame)) {
       auto _f = std::move(std::get<_After_Node>(_frame));
@@ -114,7 +114,7 @@ MemSafetyProbe24::list_to_tree(const MemSafetyProbe24::mylist<uint64_t> &l,
           std::get<typename MemSafetyProbe24::mylist<uint64_t>::Mycons>(
               _loop_l->v());
       _loop_acc = tree::node(std::move(_loop_acc), a0, tree::leaf());
-      _loop_l = a1.get();
+      _loop_l = crane_raw(a1);
     }
   }
 }
@@ -175,9 +175,9 @@ MemSafetyProbe24::zip_trees(
         } else {
           const auto &[a00, a10, a20] =
               std::get<typename MemSafetyProbe24::tree::Node>(t2.v());
-          _stack.emplace_back(
-              _After_Node{a00.get(), a0.get(), std::make_pair(a1, a10)});
-          _stack.emplace_back(_Enter{a20.get(), a2.get()});
+          _stack.emplace_back(_After_Node{crane_raw(a00), crane_raw(a0),
+                                          std::make_pair(a1, a10)});
+          _stack.emplace_back(_Enter{crane_raw(a20), crane_raw(a2)});
         }
       }
     } else if (std::holds_alternative<_After_Node>(_frame)) {

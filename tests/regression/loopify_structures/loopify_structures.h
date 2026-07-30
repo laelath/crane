@@ -1,6 +1,7 @@
 #ifndef INCLUDED_LOOPIFY_STRUCTURES
 #define INCLUDED_LOOPIFY_STRUCTURES
 
+#include "crane_fn.h"
 #include <any>
 #include <memory>
 #include <optional>
@@ -428,7 +429,7 @@ struct LoopifyStructures {
         if (p(a0)) {
           return std::make_optional<uint64_t>(a0);
         } else {
-          _loop_l = a1.get();
+          _loop_l = crane_raw(a1);
         }
       }
     }
@@ -471,9 +472,9 @@ struct LoopifyStructures {
           if (_cs.has_value()) {
             const uint64_t &y = *_cs;
             _stack.emplace_back(_Resume_y{y});
-            _stack.emplace_back(_Enter{a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a1)});
           } else {
-            _stack.emplace_back(_Enter{a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a1)});
           }
         }
       } else {
@@ -520,9 +521,9 @@ struct LoopifyStructures {
           const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
           if (p(a0)) {
             _stack.emplace_back(_Resume1{f(a0)});
-            _stack.emplace_back(_Enter{a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a1)});
           } else {
-            _stack.emplace_back(_Enter{a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a1)});
           }
         }
       } else {

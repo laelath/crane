@@ -36,7 +36,7 @@ List<std::pair<uint64_t, uint64_t>> LoopifyListTransforms::run_length_encode(
               List<std::pair<uint64_t, uint64_t>>::nil());
         } else {
           _stack.emplace_back(_Cont_Cons{a0});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       }
     } else {
@@ -101,7 +101,7 @@ List<uint64_t> LoopifyListTransforms::prefix_sums(
       } else {
         const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
         _stack.emplace_back(_Resume_Cons{acc});
-        _stack.emplace_back(_Enter{a1.get(), (acc + a0)});
+        _stack.emplace_back(_Enter{crane_raw(a1), (acc + a0)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -156,7 +156,7 @@ List<std::pair<uint64_t, uint64_t>> LoopifyListTransforms::sliding_pairs_fuel(
             const auto &[a00, a10] =
                 std::get<typename List<uint64_t>::Cons>(_sv0.v());
             _stack.emplace_back(_Resume_Cons{std::make_pair(a0, a00)});
-            _stack.emplace_back(_Enter{a1.get(), fuel_});
+            _stack.emplace_back(_Enter{crane_raw(a1), fuel_});
           }
         }
       }
@@ -228,7 +228,7 @@ List<uint64_t> LoopifyListTransforms::differences_fuel(
             const auto &[a00, a10] =
                 std::get<typename List<uint64_t>::Cons>(_sv0.v());
             _stack.emplace_back(_Resume_Cons{abs_diff(a0, a00)});
-            _stack.emplace_back(_Enter{a1.get(), fuel_});
+            _stack.emplace_back(_Enter{crane_raw(a1), fuel_});
           }
         }
       }
@@ -282,7 +282,7 @@ List<uint64_t> LoopifyListTransforms::take(
         } else {
           const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
           _stack.emplace_back(_Resume_Cons{a0});
-          _stack.emplace_back(_Enter{a1.get(), n_});
+          _stack.emplace_back(_Enter{crane_raw(a1), n_});
         }
       }
     } else {
@@ -453,10 +453,10 @@ List<uint64_t> LoopifyListTransforms::uniq_sorted_fuel(
             const auto &[a00, a10] =
                 std::get<typename List<uint64_t>::Cons>(_sv0.v());
             if (a0 == a00) {
-              _stack.emplace_back(_Enter{a1.get(), fuel_});
+              _stack.emplace_back(_Enter{crane_raw(a1), fuel_});
             } else {
               _stack.emplace_back(_Resume1{a0});
-              _stack.emplace_back(_Enter{a1.get(), fuel_});
+              _stack.emplace_back(_Enter{crane_raw(a1), fuel_});
             }
           }
         }
@@ -511,7 +511,7 @@ uint64_t LoopifyListTransforms::step_sum(
           contribution = (a0 * UINT64_C(2));
         }
         _stack.emplace_back(_Resume_Cons{contribution});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Cons>(_frame));

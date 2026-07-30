@@ -1,6 +1,7 @@
 #ifndef INCLUDED_PAIRDEREFVALUE
 #define INCLUDED_PAIRDEREFVALUE
 
+#include "crane_fn.h"
 #include <concepts>
 #include <utility>
 #include <variant>
@@ -74,9 +75,9 @@ template <HasKey K> struct Collector {
           const auto &[x_, gamma] = a0;
           if (K::key_eq_dec(x_, x)) {
             _stack.emplace_back(_Resume1{gamma});
-            _stack.emplace_back(_Enter{a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a1)});
           } else {
-            _stack.emplace_back(_Enter{a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a1)});
           }
         }
       } else {

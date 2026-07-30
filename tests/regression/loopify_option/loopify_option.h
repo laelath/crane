@@ -1,6 +1,7 @@
 #ifndef INCLUDED_LOOPIFY_OPTION
 #define INCLUDED_LOOPIFY_OPTION
 
+#include "crane_fn.h"
 #include <any>
 #include <memory>
 #include <optional>
@@ -139,7 +140,7 @@ struct LoopifyOption {
         } else {
           const auto &[a0, a1] = std::get<typename list<T1>::Cons>(l.v());
           _stack.emplace_back(_Resume_Cons{*a1, a0});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       } else {
         auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -183,7 +184,7 @@ struct LoopifyOption {
         } else {
           const auto &[a0, a1] = std::get<typename list<T1>::Cons>(l.v());
           _stack.emplace_back(_Resume_Cons{*a1, a0});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       } else {
         auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -206,7 +207,7 @@ struct LoopifyOption {
         if (p(a0)) {
           return std::make_optional<T1>(a0);
         } else {
-          _loop_l = a1.get();
+          _loop_l = crane_raw(a1);
         }
       }
     }
@@ -224,7 +225,7 @@ struct LoopifyOption {
         if (std::holds_alternative<typename list<T1>::Nil>(_sv.v())) {
           return std::make_optional<T1>(a0);
         } else {
-          _loop_l = a1.get();
+          _loop_l = crane_raw(a1);
         }
       }
     }
@@ -243,7 +244,7 @@ struct LoopifyOption {
         if (_loop_n == UINT64_C(0)) {
           return std::make_optional<T1>(a0);
         } else {
-          _loop_l = a1.get();
+          _loop_l = crane_raw(a1);
           _loop_n = ((
               (_loop_n - UINT64_C(1)) > _loop_n ? 0 : (_loop_n - UINT64_C(1))));
         }
@@ -292,9 +293,9 @@ struct LoopifyOption {
           if (_cs.has_value()) {
             const T2 &y = *_cs;
             _stack.emplace_back(_Resume_y{y});
-            _stack.emplace_back(_Enter{a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a1)});
           } else {
-            _stack.emplace_back(_Enter{a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a1)});
           }
         }
       } else {
@@ -321,7 +322,7 @@ struct LoopifyOption {
           return std::make_optional<uint64_t>(_loop_i);
         } else {
           _loop_i = (_loop_i + 1);
-          _loop_l = a1.get();
+          _loop_l = crane_raw(a1);
         }
       }
     }

@@ -124,7 +124,7 @@ uint64_t MemSafetyProbe20::sum_wrapped(
         const auto &[a0, a1] = std::get<typename MemSafetyProbe20::mylist<
             MemSafetyProbe20::wrapped>::Mycons>(l.v());
         _stack.emplace_back(_Resume_Mycons{a0.unwrap(x)});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Mycons>(_frame));

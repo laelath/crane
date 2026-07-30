@@ -35,7 +35,7 @@ MemSafetyProbe2::mylist<uint64_t> MemSafetyProbe2::map_apply(
         const auto &[a0, a1] = std::get<typename MemSafetyProbe2::mylist<
             std::function<uint64_t(uint64_t)>>::Mycons>(fs.v());
         _stack.emplace_back(_Resume_Mycons{a0(x)});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Mycons>(_frame));
@@ -77,7 +77,7 @@ uint64_t MemSafetyProbe2::mysum(
         const auto &[a0, a1] =
             std::get<typename MemSafetyProbe2::mylist<uint64_t>::Mycons>(l.v());
         _stack.emplace_back(_Resume_Mycons{a0});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Mycons>(_frame));
@@ -126,7 +126,7 @@ MemSafetyProbe2::tree MemSafetyProbe2::fold_tree_build(
         const auto &[a0, a1] = std::get<typename MemSafetyProbe2::mylist<
             std::function<uint64_t(uint64_t)>>::Mycons>(fs.v());
         _stack.emplace_back(_Resume_Mycons{tree::leaf(), a0(acc)});
-        _stack.emplace_back(_Enter{a0(acc), a1.get()});
+        _stack.emplace_back(_Enter{a0(acc), crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Mycons>(_frame));
@@ -170,7 +170,7 @@ uint64_t MemSafetyProbe2::apply_all(
         const auto &[a0, a1] = std::get<typename MemSafetyProbe2::mylist<
             std::function<uint64_t(uint64_t)>>::Mycons>(fs.v());
         _stack.emplace_back(_Resume_Mycons{a0(x)});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Mycons>(_frame));

@@ -1,6 +1,7 @@
 #ifndef INCLUDED_LOOPIFY_FOLDS
 #define INCLUDED_LOOPIFY_FOLDS
 
+#include "crane_fn.h"
 #include <any>
 #include <memory>
 #include <type_traits>
@@ -123,7 +124,7 @@ struct LoopifyFolds {
       } else {
         const auto &[a0, a1] =
             std::get<typename List<uint64_t>::Cons>(_loop_l->v());
-        _loop_l = a1.get();
+        _loop_l = crane_raw(a1);
         _loop_acc = f(_loop_acc, a0);
       }
     }
@@ -162,7 +163,7 @@ struct LoopifyFolds {
         } else {
           const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
           _stack.emplace_back(_Resume_Cons{a0});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       } else {
         auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -207,7 +208,7 @@ struct LoopifyFolds {
         } else {
           const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
           _stack.emplace_back(_Resume_Cons{acc});
-          _stack.emplace_back(_Enter{a1.get(), f(acc, a0)});
+          _stack.emplace_back(_Enter{crane_raw(a1), f(acc, a0)});
         }
       } else {
         auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -251,7 +252,7 @@ struct LoopifyFolds {
         } else {
           const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
           _stack.emplace_back(_Cont_Cons{a0});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       } else {
         auto _f = std::move(std::get<_Cont_Cons>(_frame));
@@ -341,7 +342,7 @@ struct LoopifyFolds {
             _result = std::move(a0);
           } else {
             _stack.emplace_back(_Resume_Cons{a0});
-            _stack.emplace_back(_Enter{a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a1)});
           }
         }
       } else {
@@ -390,7 +391,7 @@ struct LoopifyFolds {
           const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
           auto [acc_, y] = f(acc, a0);
           _stack.emplace_back(_Cont_acc_{y});
-          _stack.emplace_back(_Enter{a1.get(), acc_});
+          _stack.emplace_back(_Enter{crane_raw(a1), acc_});
         }
       } else {
         auto _f = std::move(std::get<_Cont_acc_>(_frame));

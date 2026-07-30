@@ -1,6 +1,7 @@
 #ifndef INCLUDED_MEM_SAFETY_PROBE6
 #define INCLUDED_MEM_SAFETY_PROBE6
 
+#include "crane_fn.h"
 #include <any>
 #include <functional>
 #include <memory>

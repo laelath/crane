@@ -1,6 +1,7 @@
 #ifndef INCLUDED_LOOPIFY_ALGORITHMS
 #define INCLUDED_LOOPIFY_ALGORITHMS
 
+#include "crane_fn.h"
 #include <any>
 #include <memory>
 #include <utility>

@@ -30,7 +30,7 @@ uint64_t LoopifyAdvancedLists::product(
       } else {
         const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
         _stack.emplace_back(_Resume_Cons{a0});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -76,10 +76,10 @@ List<uint64_t> LoopifyAdvancedLists::compress(
           const auto &[a00, a10] =
               std::get<typename List<uint64_t>::Cons>(_sv0.v());
           if (a0 == a00) {
-            _stack.emplace_back(_Enter{a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a1)});
           } else {
             _stack.emplace_back(_Resume1{a0});
-            _stack.emplace_back(_Enter{a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a1)});
           }
         }
       }
@@ -127,7 +127,7 @@ List<uint64_t> LoopifyAdvancedLists::pairwise_sum(
           const auto &[a00, a10] =
               std::get<typename List<uint64_t>::Cons>(_sv0.v());
           _stack.emplace_back(_Resume_Cons{(a0 + a00)});
-          _stack.emplace_back(_Enter{a10.get()});
+          _stack.emplace_back(_Enter{crane_raw(a10)});
         }
       }
     } else {
@@ -176,7 +176,7 @@ List<std::pair<uint64_t, uint64_t>> LoopifyAdvancedLists::group_pairs(
           const auto &[a00, a10] =
               std::get<typename List<uint64_t>::Cons>(_sv0.v());
           _stack.emplace_back(_Resume_Cons{std::make_pair(a0, a00)});
-          _stack.emplace_back(_Enter{a10.get()});
+          _stack.emplace_back(_Enter{crane_raw(a10)});
         }
       }
     } else {
@@ -270,7 +270,7 @@ List<uint64_t> LoopifyAdvancedLists::concat_lists(
         const auto &[a0, a1] =
             std::get<typename List<List<uint64_t>>::Cons>(ll.v());
         _stack.emplace_back(_Resume_Cons{a0});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Cons>(_frame));

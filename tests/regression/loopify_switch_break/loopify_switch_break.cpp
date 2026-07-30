@@ -26,16 +26,16 @@ uint64_t LoopifySwitchBreak::eval_ops(
       switch (t) {
       case Tag::ADD: {
         _loop_acc = (_loop_acc + v);
-        _loop_ops = a1.get();
+        _loop_ops = crane_raw(a1);
         break;
       }
       case Tag::MUL: {
         _loop_acc = (_loop_acc * v);
-        _loop_ops = a1.get();
+        _loop_ops = crane_raw(a1);
         break;
       }
       case Tag::KEEP: {
-        _loop_ops = a1.get();
+        _loop_ops = crane_raw(a1);
         break;
       }
       default:
@@ -99,17 +99,17 @@ List<uint64_t> LoopifySwitchBreak::collect_ops(
         switch (t) {
         case Tag::ADD: {
           _stack.emplace_back(_Resume_t{acc});
-          _stack.emplace_back(_Enter{(acc + v), a1.get()});
+          _stack.emplace_back(_Enter{(acc + v), crane_raw(a1)});
           break;
         }
         case Tag::MUL: {
           _stack.emplace_back(_Resume_t_1{acc});
-          _stack.emplace_back(_Enter{(acc * v), a1.get()});
+          _stack.emplace_back(_Enter{(acc * v), crane_raw(a1)});
           break;
         }
         case Tag::KEEP: {
           _stack.emplace_back(_Resume_t_2{acc});
-          _stack.emplace_back(_Enter{acc, a1.get()});
+          _stack.emplace_back(_Enter{acc, crane_raw(a1)});
           break;
         }
         default:
@@ -177,11 +177,11 @@ uint64_t LoopifySwitchBreak::count_tag(
           switch (t_) {
           case Tag::ADD: {
             _stack.emplace_back(_Resume_t_{});
-            _stack.emplace_back(_Enter{a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a1)});
             break;
           }
           default: {
-            _stack.emplace_back(_Enter{a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a1)});
           }
           }
           break;
@@ -190,11 +190,11 @@ uint64_t LoopifySwitchBreak::count_tag(
           switch (t_) {
           case Tag::MUL: {
             _stack.emplace_back(_Resume_t__1{});
-            _stack.emplace_back(_Enter{a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a1)});
             break;
           }
           default: {
-            _stack.emplace_back(_Enter{a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a1)});
           }
           }
           break;
@@ -203,11 +203,11 @@ uint64_t LoopifySwitchBreak::count_tag(
           switch (t_) {
           case Tag::KEEP: {
             _stack.emplace_back(_Resume_t__2{});
-            _stack.emplace_back(_Enter{a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a1)});
             break;
           }
           default: {
-            _stack.emplace_back(_Enter{a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a1)});
           }
           }
           break;

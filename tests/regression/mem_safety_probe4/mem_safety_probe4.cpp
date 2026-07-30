@@ -38,7 +38,7 @@ uint64_t MemSafetyProbe4::sum_through(
             typename MemSafetyProbe4::mylist<MemSafetyProbe4::tree>::Mycons>(
             l.v());
         _stack.emplace_back(_Resume_Mycons{a0});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Mycons>(_frame));
@@ -87,7 +87,7 @@ uint64_t MemSafetyProbe4::add_through(
           return a0.sum_values(_x0);
         };
         _stack.emplace_back(_Resume_Mycons{f(UINT64_C(0))});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Mycons>(_frame));
@@ -141,7 +141,7 @@ uint64_t MemSafetyProbe4::double_partial(
           return a0.sum_values(_x0);
         };
         _stack.emplace_back(_Resume_Mycons{g(UINT64_C(0)), std::move(f)});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Mycons>(_frame));
@@ -193,7 +193,7 @@ uint64_t MemSafetyProbe4::weighted_sum(
           return a0.sum_values(_x0);
         };
         _stack.emplace_back(_Resume_Mycons{f(w)});
-        _stack.emplace_back(_Enter{f(UINT64_C(0)), a1.get()});
+        _stack.emplace_back(_Enter{f(UINT64_C(0)), crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Mycons>(_frame));
@@ -241,7 +241,7 @@ MemSafetyProbe4::mylist<uint64_t> MemSafetyProbe4::transform_list(
           return a0.sum_values(_x0);
         };
         _stack.emplace_back(_Resume_Mycons{f(UINT64_C(0))});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Mycons>(_frame));
@@ -283,7 +283,7 @@ uint64_t MemSafetyProbe4::mysum(
         const auto &[a0, a1] =
             std::get<typename MemSafetyProbe4::mylist<uint64_t>::Mycons>(l.v());
         _stack.emplace_back(_Resume_Mycons{a0});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Mycons>(_frame));
@@ -332,7 +332,7 @@ uint64_t MemSafetyProbe4::process_list(
           return a0.sum_values(_x0);
         };
         _stack.emplace_back(_Resume_Mycons{std::move(f)});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Mycons>(_frame));
@@ -360,7 +360,7 @@ uint64_t MemSafetyProbe4::nested_apply(
         return a0.sum_values(_x0);
       };
       _loop_base = f(_loop_base);
-      _loop_l = a1.get();
+      _loop_l = crane_raw(a1);
     }
   }
 }

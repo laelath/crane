@@ -1,6 +1,7 @@
 #ifndef INCLUDED_CLOSURE_CAPTURE_MATCH
 #define INCLUDED_CLOSURE_CAPTURE_MATCH
 
+#include "crane_fn.h"
 #include <functional>
 #include <memory>
 #include <type_traits>

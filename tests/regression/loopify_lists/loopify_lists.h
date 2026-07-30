@@ -1,6 +1,7 @@
 #ifndef INCLUDED_LOOPIFY_LISTS
 #define INCLUDED_LOOPIFY_LISTS
 
+#include "crane_fn.h"
 #include <any>
 #include <functional>
 #include <memory>
@@ -142,7 +143,7 @@ struct LoopifyLists {
         } else {
           const auto &[a0, a1] = std::get<typename list<T1>::Cons>(l.v());
           _stack.emplace_back(_Resume_Cons{*a1, a0});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       } else {
         auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -186,7 +187,7 @@ struct LoopifyLists {
         } else {
           const auto &[a0, a1] = std::get<typename list<T1>::Cons>(l.v());
           _stack.emplace_back(_Resume_Cons{*a1, a0});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       } else {
         auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -230,7 +231,7 @@ struct LoopifyLists {
         } else {
           const auto &[a0, a1] = std::get<typename list<T1>::Cons>(l.v());
           _stack.emplace_back(_Resume_Cons{a0, a0});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       } else {
         auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -274,7 +275,7 @@ struct LoopifyLists {
         } else {
           const auto &[a0, a1] = std::get<typename list<T1>::Cons>(l.v());
           _stack.emplace_back(_Resume_Cons{a0});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       } else {
         auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -321,7 +322,7 @@ struct LoopifyLists {
             _result = list<T1>::cons(a0, list<T1>::nil());
           } else {
             _stack.emplace_back(_Resume_Cons{a0});
-            _stack.emplace_back(_Enter{a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a1)});
           }
         }
       } else {
@@ -541,7 +542,7 @@ struct LoopifyLists {
           };
           _stack.emplace_back(
               _Resume_Cons{list<T1>::nil(), std::move(map_cons)});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       } else {
         auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -589,7 +590,7 @@ struct LoopifyLists {
           const auto &[a0, a1] = std::get<typename list<T1>::Cons>(l.v());
           T2 new_acc = f(acc, a0);
           _stack.emplace_back(_Resume_Cons{acc});
-          _stack.emplace_back(_Enter{a1.get(), std::move(new_acc)});
+          _stack.emplace_back(_Enter{crane_raw(a1), std::move(new_acc)});
         }
       } else {
         auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -638,11 +639,11 @@ struct LoopifyLists {
           const auto &[a0, a1] = std::get<typename list<T1>::Cons>(l.v());
           if (eq(prev, a0)) {
             _stack.emplace_back(
-                _Enter{a1.get(), list<T1>::cons(a0, std::move(acc)), a0});
+                _Enter{crane_raw(a1), list<T1>::cons(a0, std::move(acc)), a0});
           } else {
             _stack.emplace_back(_Resume1{std::move(std::move(acc))});
             _stack.emplace_back(
-                _Enter{a1.get(), list<T1>::cons(a0, list<T1>::nil()), a0});
+                _Enter{crane_raw(a1), list<T1>::cons(a0, list<T1>::nil()), a0});
           }
         }
       } else {
@@ -820,9 +821,9 @@ struct LoopifyLists {
           const auto &[a0, a1] = std::get<typename list<uint64_t>::Cons>(l.v());
           if (p(a0)) {
             _stack.emplace_back(_Resume1{});
-            _stack.emplace_back(_Enter{a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a1)});
           } else {
-            _stack.emplace_back(_Enter{a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a1)});
           }
         }
       } else {
@@ -882,7 +883,7 @@ struct LoopifyLists {
           } else {
             const auto &[a00, a10] = std::get<typename list<T2>::Cons>(l2.v());
             _stack.emplace_back(_Resume_Cons{f(a0, a00)});
-            _stack.emplace_back(_Enter{a10.get(), a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a10), crane_raw(a1)});
           }
         }
       } else {
@@ -1041,7 +1042,7 @@ struct LoopifyLists {
             const auto &[a00, a10] =
                 std::get<typename list<T1>::Cons>(_sv0.v());
             _stack.emplace_back(_Resume_Cons{std::make_pair(a0, a00)});
-            _stack.emplace_back(_Enter{a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a1)});
           }
         }
       } else {
@@ -1091,7 +1092,7 @@ struct LoopifyLists {
         } else {
           const auto &[a0, a1] = std::get<typename list<uint64_t>::Cons>(l.v());
           _stack.emplace_back(_Cont_Cons{a0});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       } else {
         auto _f = std::move(std::get<_Cont_Cons>(_frame));
@@ -1266,7 +1267,7 @@ struct LoopifyLists {
           const auto &[a0, a1] = std::get<typename list<T1>::Cons>(l.v());
           auto [acc_, y] = f(acc, a0);
           _stack.emplace_back(_Cont_acc_{y});
-          _stack.emplace_back(_Enter{a1.get(), acc_});
+          _stack.emplace_back(_Enter{crane_raw(a1), acc_});
         }
       } else {
         auto _f = std::move(std::get<_Cont_acc_>(_frame));
@@ -1334,7 +1335,7 @@ struct LoopifyLists {
             _result = *a1;
           } else {
             _stack.emplace_back(_Resume1{a0});
-            _stack.emplace_back(_Enter{a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a1)});
           }
         }
       } else {
@@ -1382,9 +1383,9 @@ struct LoopifyLists {
           const auto &[a0, a1] = std::get<typename list<uint64_t>::Cons>(l.v());
           if (p(a0)) {
             _stack.emplace_back(_Resume1{i});
-            _stack.emplace_back(_Enter{(i + 1), a1.get()});
+            _stack.emplace_back(_Enter{(i + 1), crane_raw(a1)});
           } else {
-            _stack.emplace_back(_Enter{(i + 1), a1.get()});
+            _stack.emplace_back(_Enter{(i + 1), crane_raw(a1)});
           }
         }
       } else {
@@ -1456,7 +1457,7 @@ struct LoopifyLists {
             return app_impl(app_impl, l1, l2);
           };
           _stack.emplace_back(_Resume_Cons{std::move(app), a0});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       } else {
         auto _f = std::move(std::get<_Resume_Cons>(_frame));

@@ -1,6 +1,7 @@
 #ifndef INCLUDED_MEM_SAFETY_PROBE28
 #define INCLUDED_MEM_SAFETY_PROBE28
 
+#include "crane_fn.h"
 #include <algorithm>
 #include <any>
 #include <memory>
@@ -222,8 +223,8 @@ struct MemSafetyProbe28 {
           _result = std::move(f);
         } else {
           const auto &[a0, a1, a2] = std::get<typename tree::Node>(t.v());
-          _stack.emplace_back(_After_Node{a0.get(), *a2, a1, *a0});
-          _stack.emplace_back(_Enter{a2.get()});
+          _stack.emplace_back(_After_Node{crane_raw(a0), *a2, a1, *a0});
+          _stack.emplace_back(_Enter{crane_raw(a2)});
         }
       } else if (std::holds_alternative<_After_Node>(_frame)) {
         auto _f = std::move(std::get<_After_Node>(_frame));
@@ -283,8 +284,8 @@ struct MemSafetyProbe28 {
           _result = std::move(f);
         } else {
           const auto &[a0, a1, a2] = std::get<typename tree::Node>(t.v());
-          _stack.emplace_back(_After_Node{a0.get(), *a2, a1, *a0});
-          _stack.emplace_back(_Enter{a2.get()});
+          _stack.emplace_back(_After_Node{crane_raw(a0), *a2, a1, *a0});
+          _stack.emplace_back(_Enter{crane_raw(a2)});
         }
       } else if (std::holds_alternative<_After_Node>(_frame)) {
         auto _f = std::move(std::get<_After_Node>(_frame));

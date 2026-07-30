@@ -32,7 +32,7 @@ uint64_t MemSafetyProbe7::sum_list(
         const auto &[a0, a1] =
             std::get<typename MemSafetyProbe7::mylist<uint64_t>::Mycons>(l.v());
         _stack.emplace_back(_Resume_Mycons{a0});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Mycons>(_frame));
@@ -82,7 +82,7 @@ MemSafetyProbe7::build_len_closures(
         const MemSafetyProbe7::mylist<uint64_t> &a1_value = *a1;
         _stack.emplace_back(_Resume_Mycons{
             [=](std::monostate) mutable { return a1_value.length(); }});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Mycons>(_frame));
@@ -126,7 +126,7 @@ uint64_t MemSafetyProbe7::sum_fns(
         const auto &[a0, a1] = std::get<typename MemSafetyProbe7::mylist<
             std::function<uint64_t(std::monostate)>>::Mycons>(l.v());
         _stack.emplace_back(_Resume_Mycons{a0(std::monostate{})});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Mycons>(_frame));
@@ -176,7 +176,7 @@ MemSafetyProbe7::build_sum_closures(
         const MemSafetyProbe7::mylist<uint64_t> &a1_value = *a1;
         _stack.emplace_back(_Resume_Mycons{
             [=](std::monostate) mutable { return sum_list(a1_value); }});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Mycons>(_frame));
@@ -226,7 +226,7 @@ MemSafetyProbe7::build_accum_closures(
         _stack.emplace_back(_Resume_Mycons{[=](uint64_t n) mutable {
           return ((a0 + sum_list(a1_value)) + n);
         }});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Mycons>(_frame));
@@ -271,7 +271,7 @@ uint64_t MemSafetyProbe7::apply_all(
         const auto &[a0, a1] = std::get<typename MemSafetyProbe7::mylist<
             std::function<uint64_t(uint64_t)>>::Mycons>(l.v());
         _stack.emplace_back(_Resume_Mycons{std::move(a0)});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Mycons>(_frame));

@@ -162,7 +162,7 @@ uint64_t LoopifyGenerators::len_impl(
       } else {
         const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
         _stack.emplace_back(_Resume_Cons{});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -276,8 +276,9 @@ List<uint64_t> LoopifyGenerators::take(
           _result = List<uint64_t>::nil();
         } else {
           _stack.emplace_back(_Resume1{a0});
-          _stack.emplace_back(_Enter{
-              a1.get(), (((n - UINT64_C(1)) > n ? 0 : (n - UINT64_C(1))))});
+          _stack.emplace_back(
+              _Enter{crane_raw(a1),
+                     (((n - UINT64_C(1)) > n ? 0 : (n - UINT64_C(1))))});
         }
       }
     } else {
@@ -403,7 +404,7 @@ List<uint64_t> LoopifyGenerators::replicate_each(
       } else {
         const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
         _stack.emplace_back(_Resume_Cons{replicate_single(a0, n)});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Cons>(_frame));

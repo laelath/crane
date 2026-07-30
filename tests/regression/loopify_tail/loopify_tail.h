@@ -1,6 +1,7 @@
 #ifndef INCLUDED_LOOPIFY_TAIL
 #define INCLUDED_LOOPIFY_TAIL
 
+#include "crane_fn.h"
 #include <any>
 #include <memory>
 #include <type_traits>
@@ -138,7 +139,7 @@ struct LoopifyTail {
         } else {
           const auto &[a0, a1] = std::get<typename list<T1>::Cons>(l.v());
           _stack.emplace_back(_Resume_Cons{*a1, a0});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       } else {
         auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -182,7 +183,7 @@ struct LoopifyTail {
         } else {
           const auto &[a0, a1] = std::get<typename list<T1>::Cons>(l.v());
           _stack.emplace_back(_Resume_Cons{*a1, a0});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       } else {
         auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -201,7 +202,7 @@ struct LoopifyTail {
         return _loop_x;
       } else {
         const auto &[a0, a1] = std::get<typename list<T1>::Cons>(_loop_l->v());
-        _loop_l = a1.get();
+        _loop_l = crane_raw(a1);
         _loop_x = a0;
       }
     }
@@ -217,7 +218,7 @@ struct LoopifyTail {
         return _loop_acc;
       } else {
         const auto &[a0, a1] = std::get<typename list<T1>::Cons>(_loop_l->v());
-        _loop_l = a1.get();
+        _loop_l = crane_raw(a1);
         _loop_acc = (_loop_acc + 1);
       }
     }
@@ -243,7 +244,7 @@ struct LoopifyTail {
         return _loop_acc;
       } else {
         const auto &[a0, a1] = std::get<typename list<T1>::Cons>(_loop_l->v());
-        _loop_l = a1.get();
+        _loop_l = crane_raw(a1);
         _loop_acc = f(std::move(_loop_acc), a0);
       }
     }

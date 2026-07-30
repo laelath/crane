@@ -253,6 +253,10 @@ and cpp_expr =
       * bool (* capture_by_value *)
   | CPPvisit
   | CPPmk_shared of cpp_type
+  | CPParena_alloc of cpp_type
+    (* crane::arena_alloc<T> factory: allocates a T in the ambient arena and
+       returns a raw T*.  Used (like CPPmk_shared) as the callee of a
+       CPPfun_call for arena-mode recursive-field allocation. *)
   | CPPoverloaded of cpp_expr list
     (* Invariant: all elements must be CPPlambda. Enforced at construction
        in make_visit_expr (loopify.ml). *)
@@ -458,6 +462,7 @@ let map_expr
         capture )
   | CPPvisit -> e
   | CPPmk_shared ty -> CPPmk_shared (ft ty)
+  | CPParena_alloc ty -> CPParena_alloc (ft ty)
   | CPPoverloaded exprs -> CPPoverloaded (List.map fe exprs)
   | CPPstructmk (r, tys, args) ->
     CPPstructmk (r, List.map ft tys, List.map fe args)
@@ -580,7 +585,7 @@ let map_stmt
     constructor in {!cpp_expr}. *)
 let iter_expr_children ~on_expr ~on_stmts (e : cpp_expr) : unit =
   match e with
-  | CPPvar _ | CPPglob _ | CPPvisit | CPPmk_shared _
+  | CPPvar _ | CPPglob _ | CPPvisit | CPPmk_shared _ | CPParena_alloc _
   | CPPstring _ | CPPuint _ | CPPfloat _ | CPPconvertible_to _
   | CPPabort _ | CPPenum_val _ | CPPnullptr | CPPstd_holds_alternative _
   | CPPdeclval _ | CPPtypename_qualified _ | CPPqualified_t _ | CPPraw _
@@ -649,7 +654,7 @@ let iter_stmt_children ~on_expr ~on_stmts (s : cpp_stmt) : unit =
 let fold_expr_children (f : 'a -> cpp_expr -> 'a) (acc : 'a) (e : cpp_expr) : 'a =
   let fe acc e = f acc e in
   match e with
-  | CPPvar _ | CPPglob _ | CPPvisit | CPPmk_shared _
+  | CPPvar _ | CPPglob _ | CPPvisit | CPPmk_shared _ | CPParena_alloc _
   | CPPstring _ | CPPuint _ | CPPfloat _ | CPPconvertible_to _
   | CPPabort _ | CPPenum_val _ | CPPnullptr | CPPstd_holds_alternative _
   | CPPdeclval _ | CPPtypename_qualified _ | CPPqualified_t _ | CPPraw _

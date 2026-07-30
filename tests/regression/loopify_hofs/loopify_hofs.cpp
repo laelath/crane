@@ -17,8 +17,8 @@ bool LoopifyHofs::is_prefix_of(const List<uint64_t> &l1,
         const auto &[a00, a10] =
             std::get<typename List<uint64_t>::Cons>(_loop_l2->v());
         if (a0 == a00) {
-          _loop_l2 = a10.get();
-          _loop_l1 = a1.get();
+          _loop_l2 = crane_raw(a10);
+          _loop_l1 = crane_raw(a1);
         } else {
           return false;
         }
@@ -63,9 +63,9 @@ List<uint64_t> LoopifyHofs::lookup_all(
         const auto &[k, v] = a0;
         if (k == key) {
           _stack.emplace_back(_Resume1{v});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         } else {
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       }
     } else {
@@ -118,7 +118,7 @@ List<List<uint64_t>> LoopifyHofs::subsequences(
       } else {
         const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
         _stack.emplace_back(_Cont_Cons{a0});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Cont_Cons>(_frame));
@@ -182,7 +182,7 @@ List<std::pair<uint64_t, uint64_t>> LoopifyHofs::pair_with_all(
       } else {
         const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
         _stack.emplace_back(_Resume_Cons{std::make_pair(x, a0)});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -227,7 +227,7 @@ List<std::pair<uint64_t, uint64_t>> LoopifyHofs::cartesian(
       } else {
         const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l1.v());
         _stack.emplace_back(_Resume_Cons{pair_with_all(a0, l2)});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -357,7 +357,7 @@ List<List<uint64_t>> LoopifyHofs::power_set(
       } else {
         const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
         _stack.emplace_back(_Cont_Cons{a0});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Cont_Cons>(_frame));

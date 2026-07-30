@@ -60,12 +60,12 @@ uint64_t LoopifyStructures::sum_nested_list_fuel(
             const auto &[a00] =
                 std::get<typename LoopifyStructures::nested::Elem>(a0.v());
             _stack.emplace_back(_Resume_Elem{a00});
-            _stack.emplace_back(_Enter{a1.get(), f});
+            _stack.emplace_back(_Enter{crane_raw(a1), f});
           } else {
             const auto &[a00] =
                 std::get<typename LoopifyStructures::nested::NList>(a0.v());
-            _stack.emplace_back(_After_NList{a00.get(), f});
-            _stack.emplace_back(_Enter{a1.get(), f});
+            _stack.emplace_back(_After_NList{crane_raw(a00), f});
+            _stack.emplace_back(_Enter{crane_raw(a1), f});
           }
         }
       }
@@ -138,12 +138,12 @@ uint64_t LoopifyStructures::depth_nested_list_fuel(
           if (std::holds_alternative<typename LoopifyStructures::nested::Elem>(
                   a0.v())) {
             _stack.emplace_back(_Cont_Elem{});
-            _stack.emplace_back(_Enter{a1.get(), f});
+            _stack.emplace_back(_Enter{crane_raw(a1), f});
           } else {
             const auto &[a00] =
                 std::get<typename LoopifyStructures::nested::NList>(a0.v());
-            _stack.emplace_back(_Cont_NList{a1.get(), f});
-            _stack.emplace_back(_Enter{a00.get(), f});
+            _stack.emplace_back(_Cont_NList{crane_raw(a1), f});
+            _stack.emplace_back(_Enter{crane_raw(a00), f});
           }
         }
       }
@@ -234,12 +234,12 @@ List<uint64_t> LoopifyStructures::flatten_nested_list_fuel(
             const auto &[a00] =
                 std::get<typename LoopifyStructures::nested::Elem>(a0.v());
             _stack.emplace_back(_Resume_Elem{a00});
-            _stack.emplace_back(_Enter{a1.get(), f});
+            _stack.emplace_back(_Enter{crane_raw(a1), f});
           } else {
             const auto &[a00] =
                 std::get<typename LoopifyStructures::nested::NList>(a0.v());
-            _stack.emplace_back(_After_NList{a00.get(), f});
-            _stack.emplace_back(_Enter{a1.get(), f});
+            _stack.emplace_back(_After_NList{crane_raw(a00), f});
+            _stack.emplace_back(_Enter{crane_raw(a1), f});
           }
         }
       }
@@ -273,7 +273,7 @@ LoopifyStructures::find_first_some(const List<std::optional<uint64_t>> &l) {
         const uint64_t &v = *a0;
         return std::make_optional<uint64_t>(v);
       } else {
-        _loop_l = a1.get();
+        _loop_l = crane_raw(a1);
       }
     }
   }

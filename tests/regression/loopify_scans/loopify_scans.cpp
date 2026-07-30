@@ -33,7 +33,7 @@ List<uint64_t> LoopifyScans::scanl(
       } else {
         const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
         _stack.emplace_back(_Resume_Cons{acc});
-        _stack.emplace_back(_Enter{a1.get(), (acc + a0)});
+        _stack.emplace_back(_Enter{crane_raw(a1), (acc + a0)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -76,7 +76,7 @@ List<uint64_t> LoopifyScans::scanl_mult(
       } else {
         const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
         _stack.emplace_back(_Resume_Cons{acc});
-        _stack.emplace_back(_Enter{a1.get(), (acc * a0)});
+        _stack.emplace_back(_Enter{crane_raw(a1), (acc * a0)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -125,7 +125,7 @@ List<uint64_t> LoopifyScans::running_max(
           new_max = current;
         }
         _stack.emplace_back(_Resume_Cons{current});
-        _stack.emplace_back(_Enter{a1.get(), new_max});
+        _stack.emplace_back(_Enter{crane_raw(a1), new_max});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -174,7 +174,7 @@ List<uint64_t> LoopifyScans::running_min(
           new_min = current;
         }
         _stack.emplace_back(_Resume_Cons{current});
-        _stack.emplace_back(_Enter{a1.get(), new_min});
+        _stack.emplace_back(_Enter{crane_raw(a1), new_min});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -233,7 +233,7 @@ List<uint64_t> LoopifyScans::pairwise_diff(
           }
         }
         _stack.emplace_back(_Resume_Cons{diff});
-        _stack.emplace_back(_Enter{a1.get(), a0});
+        _stack.emplace_back(_Enter{crane_raw(a1), a0});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -282,10 +282,10 @@ List<uint64_t> LoopifyScans::accumulate_if_even(
         const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
         if ((UINT64_C(2) ? a0 % UINT64_C(2) : a0) == UINT64_C(0)) {
           _stack.emplace_back(_Resume1{acc});
-          _stack.emplace_back(_Enter{a1.get(), (acc + a0)});
+          _stack.emplace_back(_Enter{crane_raw(a1), (acc + a0)});
         } else {
           _stack.emplace_back(_Resume2{acc});
-          _stack.emplace_back(_Enter{a1.get(), acc});
+          _stack.emplace_back(_Enter{crane_raw(a1), acc});
         }
       }
     } else if (std::holds_alternative<_Resume1>(_frame)) {

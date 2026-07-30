@@ -11,7 +11,7 @@ std::optional<uint64_t> LoopifyOptionMaybe::find_even(const List<uint64_t> &l) {
       if ((UINT64_C(2) ? a0 % UINT64_C(2) : a0) == UINT64_C(0)) {
         return std::make_optional<uint64_t>(a0);
       } else {
-        _loop_l = a1.get();
+        _loop_l = crane_raw(a1);
       }
     }
   }
@@ -29,7 +29,7 @@ LoopifyOptionMaybe::find_greater(uint64_t threshold, const List<uint64_t> &l) {
       if (threshold < a0) {
         return std::make_optional<uint64_t>(a0);
       } else {
-        _loop_l = a1.get();
+        _loop_l = crane_raw(a1);
       }
     }
   }
@@ -51,7 +51,7 @@ LoopifyOptionMaybe::lookup(uint64_t key,
       if (key == k) {
         return std::make_optional<uint64_t>(v);
       } else {
-        _loop_l = a1.get();
+        _loop_l = crane_raw(a1);
       }
     }
   }
@@ -92,9 +92,9 @@ List<uint64_t> LoopifyOptionMaybe::lookup_all(
         const auto &[k, v] = a0;
         if (key == k) {
           _stack.emplace_back(_Resume1{v});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         } else {
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       }
     } else {
@@ -158,9 +158,9 @@ List<uint64_t> LoopifyOptionMaybe::catMaybes(
         if (a0.has_value()) {
           const uint64_t &x = *a0;
           _stack.emplace_back(_Resume_x{x});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         } else {
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       }
     } else {
@@ -185,7 +185,7 @@ LoopifyOptionMaybe::find_index_even_aux(const List<uint64_t> &l, uint64_t idx) {
         return std::make_optional<uint64_t>(_loop_idx);
       } else {
         _loop_idx = (_loop_idx + UINT64_C(1));
-        _loop_l = a1.get();
+        _loop_l = crane_raw(a1);
       }
     }
   }

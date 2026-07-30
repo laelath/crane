@@ -1,6 +1,7 @@
 #ifndef INCLUDED_LOOPIFY_TREE_VARIANTS
 #define INCLUDED_LOOPIFY_TREE_VARIANTS
 
+#include "crane_fn.h"
 #include <memory>
 #include <type_traits>
 #include <utility>

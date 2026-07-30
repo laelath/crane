@@ -1820,6 +1820,9 @@ and pp_cpp_expr env args t =
   | CPPmk_shared t ->
     require_header "memory";
     cpp_angle (sn ()).make_shared (pp_cpp_type false [] t)
+  | CPParena_alloc t ->
+    Table.mark_needs_arena ();
+    cpp_angle "crane::arena_alloc" (pp_cpp_type false [] t)
   | CPPoverloaded ls ->
     let ls_s = pp_list_newline (pp_cpp_expr env args) ls in
     str (sn ()).overloaded ++ str " {" ++ fnl () ++ ls_s ++ fnl () ++ str "}"

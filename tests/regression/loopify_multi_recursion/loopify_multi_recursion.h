@@ -1,6 +1,7 @@
 #ifndef INCLUDED_LOOPIFY_MULTI_RECURSION
 #define INCLUDED_LOOPIFY_MULTI_RECURSION
 
+#include "crane_fn.h"
 #include <algorithm>
 #include <memory>
 #include <type_traits>

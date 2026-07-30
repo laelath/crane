@@ -34,7 +34,7 @@ uint64_t LoopifyExtrema::maximum(
           _result = std::move(a0);
         } else {
           _stack.emplace_back(_Cont_Cons{a0});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       }
     } else {
@@ -85,7 +85,7 @@ uint64_t LoopifyExtrema::minimum(
           _result = std::move(a0);
         } else {
           _stack.emplace_back(_Cont_Cons{a0});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       }
     } else {
@@ -136,7 +136,7 @@ std::pair<uint64_t, uint64_t> LoopifyExtrema::minmax(
           _result = std::make_pair(a0, a0);
         } else {
           _stack.emplace_back(_Cont_Cons{a0});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       }
     } else {
@@ -175,8 +175,8 @@ uint64_t LoopifyExtrema::lex_compare(const List<uint64_t> &l1,
           if (a00 < a0) {
             return UINT64_C(2);
           } else {
-            _loop_l2 = a10.get();
-            _loop_l1 = a1.get();
+            _loop_l2 = crane_raw(a10);
+            _loop_l1 = crane_raw(a1);
           }
         }
       }
@@ -199,7 +199,7 @@ bool LoopifyExtrema::all_equal(const List<uint64_t> &l) {
         const auto &[a00, a10] =
             std::get<typename List<uint64_t>::Cons>(_sv0.v());
         if (a0 == a00) {
-          _loop_l = a1.get();
+          _loop_l = crane_raw(a1);
         } else {
           return false;
         }
@@ -223,7 +223,7 @@ bool LoopifyExtrema::is_sorted(const List<uint64_t> &l) {
         const auto &[a00, a10] =
             std::get<typename List<uint64_t>::Cons>(_sv0.v());
         if (a0 <= a00) {
-          _loop_l = a1.get();
+          _loop_l = crane_raw(a1);
         } else {
           return false;
         }

@@ -40,7 +40,7 @@ LoopifyPairs::unzip(
             l.v());
         const auto &[x, y] = a0;
         _stack.emplace_back(_Cont_x{x, y});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Cont_x>(_frame));
@@ -97,7 +97,7 @@ LoopifyPairs::partition3(
         const auto &[a0, a1] =
             std::get<typename LoopifyPairs::list<uint64_t>::Cons>(l.v());
         _stack.emplace_back(_Cont_Cons{a0});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Cont_Cons>(_frame));
@@ -167,7 +167,7 @@ std::pair<uint64_t, uint64_t> LoopifyPairs::min_max(
           _result = std::make_pair(a0, a0);
         } else {
           _stack.emplace_back(_Cont_Cons{a0});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       }
     } else {
@@ -214,7 +214,7 @@ std::pair<uint64_t, uint64_t> LoopifyPairs::sum_and_count(
         const auto &[a0, a1] =
             std::get<typename LoopifyPairs::list<uint64_t>::Cons>(l.v());
         _stack.emplace_back(_Cont_Cons{a0});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Cont_Cons>(_frame));
@@ -261,7 +261,7 @@ std::pair<uint64_t, std::pair<uint64_t, uint64_t>> LoopifyPairs::sum_prod_count(
         const auto &[a0, a1] =
             std::get<typename LoopifyPairs::list<uint64_t>::Cons>(l.v());
         _stack.emplace_back(_Cont_Cons{a0});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Cont_Cons>(_frame));
@@ -314,9 +314,9 @@ LoopifyPairs::list<uint64_t> LoopifyPairs::lookup_all(
         const auto &[k, v] = a0;
         if (k == key) {
           _stack.emplace_back(_Resume1{v});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         } else {
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       }
     } else {
@@ -365,7 +365,7 @@ LoopifyPairs::list<std::pair<uint64_t, uint64_t>> LoopifyPairs::swap_pairs(
             l.v());
         const auto &[a, b] = a0;
         _stack.emplace_back(_Resume_a{std::make_pair(b, a)});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_a>(_frame));

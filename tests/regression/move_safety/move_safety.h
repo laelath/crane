@@ -1,6 +1,7 @@
 #ifndef INCLUDED_MOVE_SAFETY
 #define INCLUDED_MOVE_SAFETY
 
+#include "crane_fn.h"
 #include <functional>
 #include <memory>
 #include <type_traits>

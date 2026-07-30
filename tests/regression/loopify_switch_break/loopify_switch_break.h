@@ -1,6 +1,7 @@
 #ifndef INCLUDED_LOOPIFY_SWITCH_BREAK
 #define INCLUDED_LOOPIFY_SWITCH_BREAK
 
+#include "crane_fn.h"
 #include <any>
 #include <memory>
 #include <utility>

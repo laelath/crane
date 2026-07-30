@@ -1,6 +1,7 @@
 #ifndef INCLUDED_LOOPIFY_FILTER_FN_REF
 #define INCLUDED_LOOPIFY_FILTER_FN_REF
 
+#include "crane_fn.h"
 #include <any>
 #include <memory>
 #include <type_traits>
@@ -157,8 +158,8 @@ struct LoopifyFilterFnRef {
           _result = std::move(f);
         } else {
           const auto &[a0, a1, a2] = std::get<typename tree<T1>::Node>(t.v());
-          _stack.emplace_back(_After_Node{a0.get(), *a2, a1, *a0});
-          _stack.emplace_back(_Enter{a2.get()});
+          _stack.emplace_back(_After_Node{crane_raw(a0), *a2, a1, *a0});
+          _stack.emplace_back(_Enter{crane_raw(a2)});
         }
       } else if (std::holds_alternative<_After_Node>(_frame)) {
         auto _f = std::move(std::get<_After_Node>(_frame));
@@ -220,8 +221,8 @@ struct LoopifyFilterFnRef {
           _result = std::move(f);
         } else {
           const auto &[a0, a1, a2] = std::get<typename tree<T1>::Node>(t.v());
-          _stack.emplace_back(_After_Node{a0.get(), *a2, a1, *a0});
-          _stack.emplace_back(_Enter{a2.get()});
+          _stack.emplace_back(_After_Node{crane_raw(a0), *a2, a1, *a0});
+          _stack.emplace_back(_Enter{crane_raw(a2)});
         }
       } else if (std::holds_alternative<_After_Node>(_frame)) {
         auto _f = std::move(std::get<_After_Node>(_frame));
@@ -284,8 +285,8 @@ struct LoopifyFilterFnRef {
           _result = tree<T1>::leaf();
         } else {
           const auto &[a0, a1, a2] = std::get<typename tree<T1>::Node>(t.v());
-          _stack.emplace_back(_Cont_Node{a1, a2.get()});
-          _stack.emplace_back(_Enter{a0.get()});
+          _stack.emplace_back(_Cont_Node{a1, crane_raw(a2)});
+          _stack.emplace_back(_Enter{crane_raw(a0)});
         }
       } else if (std::holds_alternative<_Cont_Node>(_frame)) {
         auto _f = std::move(std::get<_Cont_Node>(_frame));

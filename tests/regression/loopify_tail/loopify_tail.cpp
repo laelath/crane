@@ -13,7 +13,7 @@ bool LoopifyTail::member(uint64_t x, const LoopifyTail::list<uint64_t> &l) {
       if (x == a0) {
         return true;
       } else {
-        _loop_l = a1.get();
+        _loop_l = crane_raw(a1);
       }
     }
   }
@@ -34,7 +34,7 @@ uint64_t LoopifyTail::nth(uint64_t n, const LoopifyTail::list<uint64_t> &l,
       if (_loop_n == UINT64_C(0)) {
         return a0;
       } else {
-        _loop_l = a1.get();
+        _loop_l = crane_raw(a1);
         _loop_n =
             (((_loop_n - UINT64_C(1)) > _loop_n ? 0 : (_loop_n - UINT64_C(1))));
       }
@@ -59,7 +59,7 @@ LoopifyTail::lookup(uint64_t key,
       if (a0.first == key) {
         return a0.second;
       } else {
-        _loop_l = a1.get();
+        _loop_l = crane_raw(a1);
       }
     }
   }

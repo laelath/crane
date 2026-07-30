@@ -1271,7 +1271,7 @@ uint64_t LoopifyNumbers::sum_even_indices_fuel(
               const auto &[a0, a1] =
                   std::get<typename List<uint64_t>::Cons>(_inl_l.v());
               _stack.emplace_back(_Resume_Cons{a0});
-              _stack.emplace_back(_Enter{a1.get(), f});
+              _stack.emplace_back(_Enter{crane_raw(a1), f});
             }
           }
         }

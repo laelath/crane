@@ -1,6 +1,7 @@
 #ifndef INCLUDED_LOOPIFY_SCANS
 #define INCLUDED_LOOPIFY_SCANS
 
+#include "crane_fn.h"
 #include <any>
 #include <memory>
 #include <utility>

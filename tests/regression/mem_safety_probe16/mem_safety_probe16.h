@@ -1,6 +1,7 @@
 #ifndef INCLUDED_MEM_SAFETY_PROBE16
 #define INCLUDED_MEM_SAFETY_PROBE16
 
+#include "crane_fn.h"
 #include <any>
 #include <functional>
 #include <memory>
@@ -487,7 +488,7 @@ struct MemSafetyProbe16 {
                            return k(ll.myapp(mylist<uint64_t>::mycons(a1, rl)));
                          });
                    },
-                   a0.get()});
+                   crane_raw(a0)});
       }
     }
     return _result;

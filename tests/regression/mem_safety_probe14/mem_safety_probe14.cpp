@@ -33,7 +33,7 @@ uint64_t MemSafetyProbe14::sum_fns(
         const auto &[a0, a1] = std::get<typename MemSafetyProbe14::mylist<
             std::function<uint64_t(uint64_t)>>::Mycons>(l.v());
         _stack.emplace_back(_Resume_Mycons{a0(UINT64_C(0))});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Mycons>(_frame));
@@ -110,14 +110,14 @@ MemSafetyProbe14::tree_level_fns(
         const MemSafetyProbe14::tree &a0_value = *a0;
         const MemSafetyProbe14::tree &a2_value = *a2;
         _stack.emplace_back(_After_Node{
-            (UINT64_C(1) + depth), a0.get(),
+            (UINT64_C(1) + depth), crane_raw(a0),
             [=](uint64_t n) mutable {
               return ((a0_value.tree_sum() + a2_value.tree_sum()) + n);
             },
             [=](uint64_t n) mutable {
               return (((depth * UINT64_C(100)) + a1) + n);
             }});
-        _stack.emplace_back(_Enter{(UINT64_C(1) + depth), a2.get()});
+        _stack.emplace_back(_Enter{(UINT64_C(1) + depth), crane_raw(a2)});
       }
     } else if (std::holds_alternative<_After_Node>(_frame)) {
       auto _f = std::move(std::get<_After_Node>(_frame));
@@ -221,8 +221,8 @@ MemSafetyProbe14::collect_closures(
         const MemSafetyProbe14::tree &a0_value = *a0;
         const MemSafetyProbe14::tree &a2_value = *a2;
         _stack.emplace_back(_After_Node{
-            a0.get(), [=](uint64_t n) mutable { return (a1 + n); }});
-        _stack.emplace_back(_Enter{a2.get()});
+            crane_raw(a0), [=](uint64_t n) mutable { return (a1 + n); }});
+        _stack.emplace_back(_Enter{crane_raw(a2)});
       }
     } else if (std::holds_alternative<_After_Node>(_frame)) {
       auto _f = std::move(std::get<_After_Node>(_frame));

@@ -36,7 +36,7 @@ uint64_t MemSafetyProbe5::sum_left_vals(
             typename MemSafetyProbe5::mylist<MemSafetyProbe5::tree>::Mycons>(
             l.v());
         _stack.emplace_back(_Resume_Mycons{a0});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Mycons>(_frame));
@@ -87,7 +87,7 @@ MemSafetyProbe5::build_getters(
             _Resume_Mycons{[=](uint64_t _x0) mutable -> uint64_t {
               return a0.get_left_val(_x0);
             }});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Mycons>(_frame));
@@ -132,7 +132,7 @@ uint64_t MemSafetyProbe5::apply_all(
         const auto &[a0, a1] = std::get<typename MemSafetyProbe5::mylist<
             std::function<uint64_t(uint64_t)>>::Mycons>(l.v());
         _stack.emplace_back(_Resume_Mycons{std::move(a0)});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Mycons>(_frame));
@@ -278,7 +278,7 @@ uint64_t MemSafetyProbe5::sum_getters(
         const auto &[a0, a1] = std::get<typename MemSafetyProbe5::mylist<
             std::function<uint64_t(uint64_t)>>::Mycons>(l.v());
         _stack.emplace_back(_Resume_Mycons{a0(x)});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Mycons>(_frame));

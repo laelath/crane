@@ -12,7 +12,7 @@ bool MutualValueDeepCopy::reaches_end_a(const MutualValueDeepCopy::a &x) {
       const MutualValueDeepCopy::b &_inl_y = *a1;
       const auto &[_inl_a0] =
           std::get<typename MutualValueDeepCopy::b::BNode>(_inl_y.v());
-      _loop_x = _inl_a0.get();
+      _loop_x = crane_raw(_inl_a0);
     }
   }
 }
@@ -29,7 +29,7 @@ bool MutualValueDeepCopy::reaches_end_b(const MutualValueDeepCopy::b &y) {
     } else {
       const auto &[_inl_a0, _inl_a1] =
           std::get<typename MutualValueDeepCopy::a::ANode>(_inl_x.v());
-      _loop_y = _inl_a1.get();
+      _loop_y = crane_raw(_inl_a1);
     }
   }
 }

@@ -71,7 +71,7 @@ List<uint64_t> LoopifyListGeneration::stutter(
       } else {
         const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
         _stack.emplace_back(_Resume_Cons{a0, a0});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -198,7 +198,7 @@ List<uint64_t> LoopifyListGeneration::replicate_list(
         const auto &[n, x] = a0;
         List<uint64_t> rep = replicate(n, x);
         _stack.emplace_back(_Resume_n{std::move(std::move(rep))});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_n>(_frame));

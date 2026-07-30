@@ -1,6 +1,7 @@
 #ifndef INCLUDED_LOOPIFY_NUMERIC_MISC
 #define INCLUDED_LOOPIFY_NUMERIC_MISC
 
+#include "crane_fn.h"
 #include <any>
 #include <memory>
 #include <utility>

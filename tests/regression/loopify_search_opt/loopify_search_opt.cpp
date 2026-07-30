@@ -37,9 +37,9 @@ List<uint64_t> LoopifySearchOpt::lis(
               std::get<typename List<uint64_t>::Cons>(_sv0.v());
           if (a0 < a00) {
             _stack.emplace_back(_Resume1{a0});
-            _stack.emplace_back(_Enter{a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a1)});
           } else {
-            _stack.emplace_back(_Enter{a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a1)});
           }
         }
       }
@@ -77,14 +77,14 @@ List<uint64_t> LoopifySearchOpt::longest_run_fuel(uint64_t fuel,
             std::get<typename List<uint64_t>::Cons>(_loop_l->v());
         if (std::holds_alternative<typename List<uint64_t>::Nil>(
                 _loop_current.v_mut())) {
-          _loop_l = a1.get();
+          _loop_l = crane_raw(a1);
           _loop_current = List<uint64_t>::cons(a0, List<uint64_t>::nil());
           _loop_fuel = fuel_;
         } else {
           auto &[a00, a10] =
               std::get<typename List<uint64_t>::Cons>(_loop_current.v_mut());
           if (a0 == std::move(a00)) {
-            _loop_l = a1.get();
+            _loop_l = crane_raw(a1);
             _loop_current = List<uint64_t>::cons(a0, _loop_current);
             _loop_fuel = fuel_;
           } else {
@@ -96,7 +96,7 @@ List<uint64_t> LoopifySearchOpt::longest_run_fuel(uint64_t fuel,
             } else {
               new_best = std::move(_loop_best);
             }
-            _loop_l = a1.get();
+            _loop_l = crane_raw(a1);
             _loop_best = std::move(new_best);
             _loop_current = List<uint64_t>::cons(a0, List<uint64_t>::nil());
             _loop_fuel = fuel_;
@@ -167,11 +167,11 @@ uint64_t LoopifySearchOpt::knapsack_fuel(
                   items.v());
           const auto &[weight, value] = a0;
           if (capacity < weight) {
-            _stack.emplace_back(_Enter{a1.get(), capacity, fuel_});
+            _stack.emplace_back(_Enter{crane_raw(a1), capacity, fuel_});
           } else {
-            _stack.emplace_back(_After2{a1.get(), capacity, fuel_, value});
+            _stack.emplace_back(_After2{crane_raw(a1), capacity, fuel_, value});
             _stack.emplace_back(_Enter{
-                a1.get(),
+                crane_raw(a1),
                 (((capacity - weight) > capacity ? 0 : (capacity - weight))),
                 fuel_});
           }
@@ -243,12 +243,12 @@ bool LoopifySearchOpt::subset_sum_fuel(
         } else {
           const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
           if (target < a0) {
-            _stack.emplace_back(_Enter{a1.get(), target, fuel_});
+            _stack.emplace_back(_Enter{crane_raw(a1), target, fuel_});
           } else {
-            _stack.emplace_back(_After2{a1.get(), target, fuel_});
+            _stack.emplace_back(_After2{crane_raw(a1), target, fuel_});
             _stack.emplace_back(
-                _Enter{a1.get(), (((target - a0) > target ? 0 : (target - a0))),
-                       fuel_});
+                _Enter{crane_raw(a1),
+                       (((target - a0) > target ? 0 : (target - a0))), fuel_});
           }
         }
       }
@@ -298,7 +298,7 @@ std::pair<uint64_t, uint64_t> LoopifySearchOpt::majority(
       } else {
         const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
         _stack.emplace_back(_Cont_Cons{a0});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Cont_Cons>(_frame));
@@ -351,8 +351,8 @@ bool LoopifySearchOpt::binary_search_fuel(uint64_t fuel, uint64_t target,
         } else {
           uint64_t mid = (UINT64_C(2) ? len / UINT64_C(2) : 0);
           uint64_t mid_val;
-          auto nth_impl = [](auto &, uint64_t n,
-                             const List<uint64_t> &xs) -> uint64_t {
+          auto nth_impl = [&](auto &, uint64_t n,
+                              const List<uint64_t> &xs) -> uint64_t {
             const List<uint64_t> *_loop_xs = &xs;
             uint64_t _loop_n = std::move(n);
             while (true) {
@@ -373,7 +373,7 @@ bool LoopifySearchOpt::binary_search_fuel(uint64_t fuel, uint64_t target,
                 } else {
                   const auto &[a02, a12] =
                       std::get<typename List<uint64_t>::Cons>(_loop_xs->v());
-                  _loop_xs = a12.get();
+                  _loop_xs = crane_raw(a12);
                   _loop_n = n_;
                 }
               }

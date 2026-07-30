@@ -428,16 +428,16 @@ uint64_t LoopifyNumericSequences::alternate_sum(bool sign, uint64_t acc,
       const auto &[a0, a1] =
           std::get<typename List<uint64_t>::Cons>(_loop_l->v());
       if (_loop_sign) {
-        _loop_l = a1.get();
+        _loop_l = crane_raw(a1);
         _loop_acc = (_loop_acc + a0);
         _loop_sign = false;
       } else {
         if (a0 <= _loop_acc) {
-          _loop_l = a1.get();
+          _loop_l = crane_raw(a1);
           _loop_acc = (((_loop_acc - a0) > _loop_acc ? 0 : (_loop_acc - a0)));
           _loop_sign = true;
         } else {
-          _loop_l = a1.get();
+          _loop_l = crane_raw(a1);
           _loop_acc = UINT64_C(0);
           _loop_sign = true;
         }

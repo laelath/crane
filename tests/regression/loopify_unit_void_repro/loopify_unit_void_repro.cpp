@@ -19,7 +19,7 @@ void LoopifyUnitVoidRepro::loop(uint64_t x, uint64_t y,
           return;
         }
       }();
-      _loop_cells = a1.get();
+      _loop_cells = crane_raw(a1);
       _loop_x = (_loop_x + cell_size);
     }
   }

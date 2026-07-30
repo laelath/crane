@@ -33,7 +33,7 @@ uint64_t MemSafetyProbe10::sum_fns(
         const auto &[a0, a1] = std::get<typename MemSafetyProbe10::mylist<
             std::function<uint64_t(uint64_t)>>::Mycons>(l.v());
         _stack.emplace_back(_Resume_Mycons{a0(UINT64_C(0))});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Mycons>(_frame));
@@ -86,7 +86,7 @@ MemSafetyProbe10::collect_adders(
             [=](uint64_t n) mutable { return (a1 + n); },
             [=](uint64_t n) mutable { return (a0_value.tree_sum() + n); },
             [=](uint64_t n) mutable { return (a2_value.tree_sum() + n); }});
-        _stack.emplace_back(_Enter{a0.get()});
+        _stack.emplace_back(_Enter{crane_raw(a0)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Node>(_frame));

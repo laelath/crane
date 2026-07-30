@@ -1,6 +1,7 @@
 #ifndef INCLUDED_TAILREC_REORDER_PROBE
 #define INCLUDED_TAILREC_REORDER_PROBE
 
+#include "crane_fn.h"
 #include <any>
 #include <memory>
 #include <type_traits>
@@ -142,7 +143,7 @@ struct TailrecReorderProbe {
         } else {
           const auto &[a0, a1] = std::get<typename mylist<T1>::Mycons>(m.v());
           _stack.emplace_back(_Resume_Mycons{*a1, a0});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       } else {
         auto _f = std::move(std::get<_Resume_Mycons>(_frame));
@@ -187,7 +188,7 @@ struct TailrecReorderProbe {
         } else {
           const auto &[a0, a1] = std::get<typename mylist<T1>::Mycons>(m.v());
           _stack.emplace_back(_Resume_Mycons{*a1, a0});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       } else {
         auto _f = std::move(std::get<_Resume_Mycons>(_frame));
@@ -218,7 +219,7 @@ struct TailrecReorderProbe {
         const auto &[a0, a1] =
             std::get<typename mylist<T1>::Mycons>(_loop_l->v());
         _loop_acc = mylist<T1>::mycons(a0, std::move(_loop_acc));
-        _loop_l = a1.get();
+        _loop_l = crane_raw(a1);
       }
     }
   }
@@ -267,7 +268,7 @@ struct TailrecReorderProbe {
         } else {
           const auto &[a0, a1] = std::get<typename mylist<T1>::Mycons>(l.v());
           _stack.emplace_back(_Resume_Mycons{f(a0)});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       } else {
         auto _f = std::move(std::get<_Resume_Mycons>(_frame));

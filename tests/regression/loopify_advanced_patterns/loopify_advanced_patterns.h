@@ -1,6 +1,7 @@
 #ifndef INCLUDED_LOOPIFY_ADVANCED_PATTERNS
 #define INCLUDED_LOOPIFY_ADVANCED_PATTERNS
 
+#include "crane_fn.h"
 #include <any>
 #include <memory>
 #include <type_traits>

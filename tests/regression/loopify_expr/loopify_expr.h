@@ -1,6 +1,7 @@
 #ifndef INCLUDED_LOOPIFY_EXPR
 #define INCLUDED_LOOPIFY_EXPR
 
+#include "crane_fn.h"
 #include <algorithm>
 #include <any>
 #include <memory>

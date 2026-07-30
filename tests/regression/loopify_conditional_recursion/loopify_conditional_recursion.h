@@ -1,6 +1,7 @@
 #ifndef INCLUDED_LOOPIFY_CONDITIONAL_RECURSION
 #define INCLUDED_LOOPIFY_CONDITIONAL_RECURSION
 
+#include "crane_fn.h"
 #include <any>
 #include <memory>
 #include <optional>

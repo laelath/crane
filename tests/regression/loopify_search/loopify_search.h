@@ -1,6 +1,7 @@
 #ifndef INCLUDED_LOOPIFY_SEARCH
 #define INCLUDED_LOOPIFY_SEARCH
 
+#include "crane_fn.h"
 #include <any>
 #include <memory>
 #include <optional>
@@ -144,7 +145,7 @@ struct LoopifySearch {
         } else {
           const auto &[a0, a1] = std::get<typename List<T1>::Cons>(l.v());
           _stack.emplace_back(_Resume_Cons{});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       } else {
         auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -208,7 +209,7 @@ struct LoopifySearch {
             _result = std::move(a0);
           } else {
             _stack.emplace_back(_Cont_Cons{a0});
-            _stack.emplace_back(_Enter{a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a1)});
           }
         }
       } else {
@@ -286,9 +287,9 @@ struct LoopifySearch {
           const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
           if (p(a0)) {
             _stack.emplace_back(_Resume1{a0});
-            _stack.emplace_back(_Enter{a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a1)});
           } else {
-            _stack.emplace_back(_Enter{a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a1)});
           }
         }
       } else {
@@ -361,7 +362,7 @@ struct LoopifySearch {
         } else {
           const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
           _stack.emplace_back(_Resume_Cons{std::move(f(a0))});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       } else {
         auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -501,8 +502,8 @@ struct LoopifySearch {
           _result = f(a0);
         } else {
           const auto &[a0, a1] = std::get<typename btree::BNode>(b.v());
-          _stack.emplace_back(_After_BNode{a0.get(), *a1, *a0});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_After_BNode{crane_raw(a0), *a1, *a0});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       } else if (std::holds_alternative<_After_BNode>(_frame)) {
         auto _f = std::move(std::get<_After_BNode>(_frame));
@@ -561,8 +562,8 @@ struct LoopifySearch {
           _result = f(a0);
         } else {
           const auto &[a0, a1] = std::get<typename btree::BNode>(b.v());
-          _stack.emplace_back(_After_BNode{a0.get(), *a1, *a0});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_After_BNode{crane_raw(a0), *a1, *a0});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       } else if (std::holds_alternative<_After_BNode>(_frame)) {
         auto _f = std::move(std::get<_After_BNode>(_frame));
@@ -618,8 +619,8 @@ struct LoopifySearch {
           _result = p(a0);
         } else {
           const auto &[a0, a1] = std::get<typename btree::BNode>(t.v());
-          _stack.emplace_back(_After_BNode{a0.get()});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_After_BNode{crane_raw(a0)});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       } else if (std::holds_alternative<_After_BNode>(_frame)) {
         auto _f = std::move(std::get<_After_BNode>(_frame));
@@ -670,9 +671,9 @@ struct LoopifySearch {
           const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
           if (p(a0)) {
             _stack.emplace_back(_Resume1{idx});
-            _stack.emplace_back(_Enter{(idx + 1), a1.get()});
+            _stack.emplace_back(_Enter{(idx + 1), crane_raw(a1)});
           } else {
-            _stack.emplace_back(_Enter{(idx + 1), a1.get()});
+            _stack.emplace_back(_Enter{(idx + 1), crane_raw(a1)});
           }
         }
       } else {

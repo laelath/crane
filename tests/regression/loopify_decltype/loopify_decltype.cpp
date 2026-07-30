@@ -32,7 +32,7 @@ uint64_t LoopifyDecltype::count_true(
       } else {
         const auto &[a0, a1] = std::get<typename List<bool>::Cons>(xs.v());
         _stack.emplace_back(_Resume_Cons{(a0 ? UINT64_C(1) : UINT64_C(0))});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -75,7 +75,7 @@ uint64_t LoopifyDecltype::sum_flagged(
             std::get<typename List<LoopifyDecltype::item>::Cons>(xs.v());
         _stack.emplace_back(
             _Resume_Cons{(a0.item_flag ? a0.item_val : UINT64_C(0))});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Cons>(_frame));

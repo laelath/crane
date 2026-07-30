@@ -1,6 +1,7 @@
 #ifndef INCLUDED_LOOPIFY_TMC
 #define INCLUDED_LOOPIFY_TMC
 
+#include "crane_fn.h"
 #include <any>
 #include <memory>
 #include <type_traits>
@@ -141,7 +142,7 @@ struct LoopifyTmc {
         } else {
           const auto &[a0, a1] = std::get<typename list<T1>::Cons>(l.v());
           _stack.emplace_back(_Resume_Cons{*a1, a0});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       } else {
         auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -185,7 +186,7 @@ struct LoopifyTmc {
         } else {
           const auto &[a0, a1] = std::get<typename list<T1>::Cons>(l.v());
           _stack.emplace_back(_Resume_Cons{*a1, a0});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       } else {
         auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -229,7 +230,7 @@ struct LoopifyTmc {
         } else {
           const auto &[a0, a1] = std::get<typename list<T1>::Cons>(l1.v());
           _stack.emplace_back(_Resume_Cons{a0});
-          _stack.emplace_back(_Enter{std::move(l2), a1.get()});
+          _stack.emplace_back(_Enter{std::move(l2), crane_raw(a1)});
         }
       } else {
         auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -273,7 +274,7 @@ struct LoopifyTmc {
         } else {
           const auto &[a0, a1] = std::get<typename list<T1>::Cons>(l.v());
           _stack.emplace_back(_Resume_Cons{f(a0)});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       } else {
         auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -318,9 +319,9 @@ struct LoopifyTmc {
           const auto &[a0, a1] = std::get<typename list<T1>::Cons>(l.v());
           if (f(a0)) {
             _stack.emplace_back(_Resume1{a0});
-            _stack.emplace_back(_Enter{a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a1)});
           } else {
-            _stack.emplace_back(_Enter{a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a1)});
           }
         }
       } else {
@@ -363,7 +364,7 @@ struct LoopifyTmc {
         } else {
           const auto &[a0, a1] = std::get<typename list<T1>::Cons>(l.v());
           _stack.emplace_back(_Resume_Cons{a0});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       } else {
         auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -456,7 +457,7 @@ struct LoopifyTmc {
           } else {
             const auto &[a00, a10] = std::get<typename list<T2>::Cons>(l2.v());
             _stack.emplace_back(_Resume_Cons{f(a0, a00)});
-            _stack.emplace_back(_Enter{a10.get(), a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a10), crane_raw(a1)});
           }
         }
       } else {
@@ -504,7 +505,7 @@ struct LoopifyTmc {
         } else {
           const auto &[a0, a1] = std::get<typename list<T1>::Cons>(l.v());
           _stack.emplace_back(_Resume_Cons{a0, a0});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       } else {
         auto _f = std::move(std::get<_Resume_Cons>(_frame));

@@ -1,6 +1,7 @@
 #ifndef INCLUDED_LOOPIFY_PATTERNS
 #define INCLUDED_LOOPIFY_PATTERNS
 
+#include "crane_fn.h"
 #include <any>
 #include <functional>
 #include <memory>
@@ -140,7 +141,7 @@ struct LoopifyPatterns {
         } else {
           const auto &[a0, a1] = std::get<typename list<T1>::Cons>(l.v());
           _stack.emplace_back(_Resume_Cons{*a1, a0});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       } else {
         auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -184,7 +185,7 @@ struct LoopifyPatterns {
         } else {
           const auto &[a0, a1] = std::get<typename list<T1>::Cons>(l.v());
           _stack.emplace_back(_Resume_Cons{*a1, a0});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       } else {
         auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -267,7 +268,7 @@ struct LoopifyPatterns {
             _result = f(a0);
           } else {
             _stack.emplace_back(_Cont_Cons{a0});
-            _stack.emplace_back(_Enter{a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a1)});
           }
         }
       } else {
@@ -353,7 +354,7 @@ struct LoopifyPatterns {
           _stack.emplace_back(
               _Resume_Cons{list<T1>::cons(x, list<T1>::cons(a0, *a1)),
                            std::move(map_cons_h)});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       } else {
         auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -508,7 +509,7 @@ struct LoopifyPatterns {
             _result = list<uint64_t>::nil();
           } else {
             _stack.emplace_back(_Resume1{a0});
-            _stack.emplace_back(_Enter{a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a1)});
           }
         }
       } else {
@@ -559,7 +560,7 @@ struct LoopifyPatterns {
         } else {
           const auto &[a0, a1] = std::get<typename list<uint64_t>::Cons>(l.v());
           _stack.emplace_back(_Cont_Cons{a0});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       } else {
         auto _f = std::move(std::get<_Cont_Cons>(_frame));
@@ -631,9 +632,9 @@ struct LoopifyPatterns {
           const auto &[a0, a1] = std::get<typename list<uint64_t>::Cons>(l.v());
           if (p(idx, a0)) {
             _stack.emplace_back(_Resume1{f(a0)});
-            _stack.emplace_back(_Enter{(idx + 1), a1.get()});
+            _stack.emplace_back(_Enter{(idx + 1), crane_raw(a1)});
           } else {
-            _stack.emplace_back(_Enter{(idx + 1), a1.get()});
+            _stack.emplace_back(_Enter{(idx + 1), crane_raw(a1)});
           }
         }
       } else {

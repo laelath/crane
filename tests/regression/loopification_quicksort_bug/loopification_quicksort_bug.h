@@ -1,6 +1,7 @@
 #ifndef INCLUDED_LOOPIFICATION_QUICKSORT_BUG
 #define INCLUDED_LOOPIFICATION_QUICKSORT_BUG
 
+#include "crane_fn.h"
 #include <any>
 #include <memory>
 #include <string>

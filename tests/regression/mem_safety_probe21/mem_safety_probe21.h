@@ -1,6 +1,7 @@
 #ifndef INCLUDED_MEM_SAFETY_PROBE21
 #define INCLUDED_MEM_SAFETY_PROBE21
 
+#include "crane_fn.h"
 #include <functional>
 #include <memory>
 #include <type_traits>
@@ -122,8 +123,8 @@ struct MemSafetyProbe21 {
           _result = std::move(f);
         } else {
           const auto &[a0, a1, a2] = std::get<typename tree::Node>(t.v());
-          _stack.emplace_back(_After_Node{a0.get(), *a2, a1, *a0});
-          _stack.emplace_back(_Enter{a2.get()});
+          _stack.emplace_back(_After_Node{crane_raw(a0), *a2, a1, *a0});
+          _stack.emplace_back(_Enter{crane_raw(a2)});
         }
       } else if (std::holds_alternative<_After_Node>(_frame)) {
         auto _f = std::move(std::get<_After_Node>(_frame));
@@ -183,8 +184,8 @@ struct MemSafetyProbe21 {
           _result = std::move(f);
         } else {
           const auto &[a0, a1, a2] = std::get<typename tree::Node>(t.v());
-          _stack.emplace_back(_After_Node{a0.get(), *a2, a1, *a0});
-          _stack.emplace_back(_Enter{a2.get()});
+          _stack.emplace_back(_After_Node{crane_raw(a0), *a2, a1, *a0});
+          _stack.emplace_back(_Enter{crane_raw(a2)});
         }
       } else if (std::holds_alternative<_After_Node>(_frame)) {
         auto _f = std::move(std::get<_After_Node>(_frame));
@@ -262,7 +263,7 @@ struct MemSafetyProbe21 {
                                            return k(((lsum + a1) + rsum));
                                          });
                                    },
-                                   a0.get()});
+                                   crane_raw(a0)});
       }
     }
     return _result;

@@ -40,7 +40,7 @@ bool LoopifyListRelations::is_prefix_of(
           const auto &[a00, a10] =
               std::get<typename List<uint64_t>::Cons>(l2.v());
           _stack.emplace_back(_Resume_Cons{a0 == a00});
-          _stack.emplace_back(_Enter{a10.get(), a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a10), crane_raw(a1)});
         }
       }
     } else {
@@ -85,8 +85,8 @@ bool LoopifyListRelations::is_suffix_of(const List<uint64_t> &l1,
       return drop_impl(drop_impl, n, xs);
     };
     suffix = drop(diff, l2);
-    auto eq_impl = [](auto &, const List<uint64_t> &a,
-                      const List<uint64_t> &b) -> bool {
+    auto eq_impl = [&](auto &, const List<uint64_t> &a,
+                       const List<uint64_t> &b) -> bool {
       const List<uint64_t> *_loop_b = &b;
       const List<uint64_t> *_loop_a = &a;
       while (true) {
@@ -108,8 +108,8 @@ bool LoopifyListRelations::is_suffix_of(const List<uint64_t> &l1,
             const auto &[a01, a11] =
                 std::get<typename List<uint64_t>::Cons>(_loop_b->v());
             if (a00 == a01) {
-              _loop_b = a11.get();
-              _loop_a = a10.get();
+              _loop_b = crane_raw(a11);
+              _loop_a = crane_raw(a10);
             } else {
               return false;
             }
@@ -141,7 +141,7 @@ bool LoopifyListRelations::is_infix_of_aux(const List<uint64_t> &needle,
       if (is_prefix_of(needle, *_loop_haystack)) {
         return true;
       } else {
-        _loop_haystack = a1.get();
+        _loop_haystack = crane_raw(a1);
       }
     }
   }
@@ -187,9 +187,9 @@ List<uint64_t> LoopifyListRelations::find_sublists_aux(
             std::get<typename List<uint64_t>::Cons>(haystack.v());
         if (is_prefix_of(needle, haystack)) {
           _stack.emplace_back(_Resume1{idx});
-          _stack.emplace_back(_Enter{(idx + UINT64_C(1)), a1.get()});
+          _stack.emplace_back(_Enter{(idx + UINT64_C(1)), crane_raw(a1)});
         } else {
-          _stack.emplace_back(_Enter{(idx + UINT64_C(1)), a1.get()});
+          _stack.emplace_back(_Enter{(idx + UINT64_C(1)), crane_raw(a1)});
         }
       }
     } else {
@@ -250,7 +250,7 @@ bool LoopifyListRelations::list_eq(
           const auto &[a00, a10] =
               std::get<typename List<uint64_t>::Cons>(l2.v());
           _stack.emplace_back(_Resume_Cons{a0 == a00});
-          _stack.emplace_back(_Enter{a10.get(), a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a10), crane_raw(a1)});
         }
       }
     } else {
@@ -286,8 +286,8 @@ uint64_t LoopifyListRelations::list_compare(const List<uint64_t> &l1,
           if (a00 < a0) {
             return UINT64_C(2);
           } else {
-            _loop_l2 = a10.get();
-            _loop_l1 = a1.get();
+            _loop_l2 = crane_raw(a10);
+            _loop_l1 = crane_raw(a1);
           }
         }
       }
@@ -335,7 +335,7 @@ List<std::pair<uint64_t, uint64_t>> LoopifyListRelations::zip(
           const auto &[a00, a10] =
               std::get<typename List<uint64_t>::Cons>(l2.v());
           _stack.emplace_back(_Resume_Cons{std::make_pair(a0, a00)});
-          _stack.emplace_back(_Enter{a10.get(), a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a10), crane_raw(a1)});
         }
       }
     } else {
@@ -400,7 +400,8 @@ LoopifyListRelations::zip3(
                 std::get<typename List<uint64_t>::Cons>(l3.v());
             _stack.emplace_back(
                 _Resume_Cons{std::make_pair(std::make_pair(a0, a00), a01)});
-            _stack.emplace_back(_Enter{a11.get(), a10.get(), a1.get()});
+            _stack.emplace_back(
+                _Enter{crane_raw(a11), crane_raw(a10), crane_raw(a1)});
           }
         }
       }
@@ -590,10 +591,10 @@ List<uint64_t> LoopifyListRelations::union_(
               };
               return member(a0, l2);
             }()) {
-          _stack.emplace_back(_Enter{std::move(l2), a1.get()});
+          _stack.emplace_back(_Enter{std::move(l2), crane_raw(a1)});
         } else {
           _stack.emplace_back(_Resume1{a0});
-          _stack.emplace_back(_Enter{std::move(l2), a1.get()});
+          _stack.emplace_back(_Enter{std::move(l2), crane_raw(a1)});
         }
       }
     } else {
@@ -652,9 +653,9 @@ List<uint64_t> LoopifyListRelations::intersection(
               return member(a0, l2);
             }()) {
           _stack.emplace_back(_Resume1{a0});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         } else {
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       }
     } else {

@@ -1,6 +1,7 @@
 #ifndef INCLUDED_LOOPIFY_EXTREMA
 #define INCLUDED_LOOPIFY_EXTREMA
 
+#include "crane_fn.h"
 #include <algorithm>
 #include <any>
 #include <memory>
@@ -146,7 +147,7 @@ struct LoopifyExtrema {
             _result = f(a0);
           } else {
             _stack.emplace_back(_Cont_Cons{a0});
-            _stack.emplace_back(_Enter{a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a1)});
           }
         }
       } else {
@@ -202,7 +203,7 @@ struct LoopifyExtrema {
             _result = f(a0);
           } else {
             _stack.emplace_back(_Cont_Cons{a0});
-            _stack.emplace_back(_Enter{a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a1)});
           }
         }
       } else {
@@ -258,7 +259,7 @@ struct LoopifyExtrema {
             _result = std::move(a0);
           } else {
             _stack.emplace_back(_Cont_Cons{a0});
-            _stack.emplace_back(_Enter{a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a1)});
           }
         }
       } else {
@@ -315,7 +316,7 @@ struct LoopifyExtrema {
             _result = std::move(a0);
           } else {
             _stack.emplace_back(_Cont_Cons{a0});
-            _stack.emplace_back(_Enter{a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a1)});
           }
         }
       } else {
@@ -356,7 +357,7 @@ struct LoopifyExtrema {
           const auto &[a00, a10] =
               std::get<typename List<uint64_t>::Cons>(_sv0.v());
           if (p(a0, a00)) {
-            _loop_l = a1.get();
+            _loop_l = crane_raw(a1);
           } else {
             return false;
           }

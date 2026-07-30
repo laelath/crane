@@ -36,7 +36,7 @@ List<uint64_t> LoopifyCombinatorics::remove(
           _result = *a1;
         } else {
           _stack.emplace_back(_Resume1{a0});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       }
     } else {
@@ -83,7 +83,7 @@ List<List<uint64_t>> LoopifyCombinatorics::map_cons(
         const auto &[a0, a1] =
             std::get<typename List<List<uint64_t>>::Cons>(lsts.v());
         _stack.emplace_back(_Resume_Cons{List<uint64_t>::cons(x, a0)});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -227,7 +227,7 @@ uint64_t LoopifyCombinatorics::len_list(
       } else {
         const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
         _stack.emplace_back(_Resume_Cons{});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -314,7 +314,7 @@ List<List<uint64_t>> LoopifyCombinatorics::subsequences(
       } else {
         const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
         _stack.emplace_back(_Cont_Cons{a0});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Cont_Cons>(_frame));
@@ -378,7 +378,7 @@ List<std::pair<uint64_t, uint64_t>> LoopifyCombinatorics::map_pairs(
       } else {
         const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
         _stack.emplace_back(_Resume_Cons{std::make_pair(a0, y)});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -423,7 +423,7 @@ List<std::pair<uint64_t, uint64_t>> LoopifyCombinatorics::cartesian(
       } else {
         const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l2.v());
         _stack.emplace_back(_Resume_Cons{map_pairs(a0, l1)});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -465,7 +465,7 @@ List<List<uint64_t>> LoopifyCombinatorics::power_set(
       } else {
         const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
         _stack.emplace_back(_Cont_Cons{a0});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Cont_Cons>(_frame));
@@ -597,7 +597,7 @@ bool LoopifyCombinatorics::elem(
       } else {
         const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
         _stack.emplace_back(_Resume_Cons{x == a0});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -636,7 +636,7 @@ uint64_t LoopifyCombinatorics::len_impl(
       } else {
         const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
         _stack.emplace_back(_Resume_Cons{});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -684,7 +684,7 @@ List<uint64_t> LoopifyCombinatorics::dedup_fuel(
         } else {
           const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
           _stack.emplace_back(_Cont_Cons{a0});
-          _stack.emplace_back(_Enter{a1.get(), f});
+          _stack.emplace_back(_Enter{crane_raw(a1), f});
         }
       }
     } else {

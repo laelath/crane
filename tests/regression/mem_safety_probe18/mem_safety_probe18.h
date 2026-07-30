@@ -1,6 +1,7 @@
 #ifndef INCLUDED_MEM_SAFETY_PROBE18
 #define INCLUDED_MEM_SAFETY_PROBE18
 
+#include "crane_fn.h"
 #include <any>
 #include <functional>
 #include <memory>
@@ -368,7 +369,7 @@ struct MemSafetyProbe18 {
           const auto &[a0, a1] =
               std::get<typename mylist<mylist<T1>>::Mycons>(ls.v());
           _stack.emplace_back(_Resume_Mycons{a0});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       } else {
         auto _f = std::move(std::get<_Resume_Mycons>(_frame));

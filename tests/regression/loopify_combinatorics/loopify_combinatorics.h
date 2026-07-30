@@ -1,6 +1,7 @@
 #ifndef INCLUDED_LOOPIFY_COMBINATORICS
 #define INCLUDED_LOOPIFY_COMBINATORICS
 
+#include "crane_fn.h"
 #include <any>
 #include <memory>
 #include <utility>

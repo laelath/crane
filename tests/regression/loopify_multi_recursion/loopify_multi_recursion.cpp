@@ -297,8 +297,9 @@ uint64_t LoopifyMultiRecursion::quad_count_leaves(
       } else {
         const auto &[a0, a1, a2, a3] =
             std::get<typename LoopifyMultiRecursion::quadtree::QQuad>(t.v());
-        _stack.emplace_back(_After_QQuad{a2.get(), a1.get(), a0.get()});
-        _stack.emplace_back(_Enter{a3.get()});
+        _stack.emplace_back(
+            _After_QQuad{crane_raw(a2), crane_raw(a1), crane_raw(a0)});
+        _stack.emplace_back(_Enter{crane_raw(a3)});
       }
     } else if (std::holds_alternative<_After_QQuad>(_frame)) {
       auto _f = std::move(std::get<_After_QQuad>(_frame));
@@ -386,9 +387,9 @@ uint64_t LoopifyMultiRecursion::quad_depth(
       } else {
         const auto &[a0, a1, a2, a3] =
             std::get<typename LoopifyMultiRecursion::quadtree::QQuad>(t.v());
-        _stack.emplace_back(
-            _After_QQuad{a2.get(), a1.get(), a0.get(), UINT64_C(1)});
-        _stack.emplace_back(_Enter{a3.get()});
+        _stack.emplace_back(_After_QQuad{crane_raw(a2), crane_raw(a1),
+                                         crane_raw(a0), UINT64_C(1)});
+        _stack.emplace_back(_Enter{crane_raw(a3)});
       }
     } else if (std::holds_alternative<_After_QQuad>(_frame)) {
       auto _f = std::move(std::get<_After_QQuad>(_frame));

@@ -1,6 +1,7 @@
 #ifndef INCLUDED_LOOPIFY_LIST_ACCESS
 #define INCLUDED_LOOPIFY_LIST_ACCESS
 
+#include "crane_fn.h"
 #include <any>
 #include <memory>
 #include <type_traits>
@@ -127,7 +128,7 @@ struct LoopifyListAccess {
         if (p(a0)) {
           return a0;
         } else {
-          _loop_l = a1.get();
+          _loop_l = crane_raw(a1);
         }
       }
     }
@@ -169,9 +170,9 @@ struct LoopifyListAccess {
           const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
           if (p(a0)) {
             _stack.emplace_back(_Resume1{UINT64_C(1)});
-            _stack.emplace_back(_Enter{a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a1)});
           } else {
-            _stack.emplace_back(_Enter{a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a1)});
           }
         }
       } else {

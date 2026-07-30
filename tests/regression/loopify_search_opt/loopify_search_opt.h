@@ -1,6 +1,7 @@
 #ifndef INCLUDED_LOOPIFY_SEARCH_OPT
 #define INCLUDED_LOOPIFY_SEARCH_OPT
 
+#include "crane_fn.h"
 #include <algorithm>
 #include <any>
 #include <memory>

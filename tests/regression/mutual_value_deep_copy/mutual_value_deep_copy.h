@@ -1,6 +1,7 @@
 #ifndef INCLUDED_MUTUAL_VALUE_DEEP_COPY
 #define INCLUDED_MUTUAL_VALUE_DEEP_COPY
 
+#include "crane_fn.h"
 #include <any>
 #include <memory>
 #include <type_traits>

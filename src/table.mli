@@ -253,6 +253,15 @@ val needs_erase_fn : unit -> bool
 (** Reset the [crane_erase_fn] flag. *)
 val reset_needs_erase_fn : unit -> unit
 
+(** Mark that the [arena.h] runtime header is needed (arena-mode codegen). *)
+val mark_needs_arena : unit -> unit
+
+(** Check whether the [arena.h] runtime header is needed. *)
+val needs_arena : unit -> bool
+
+(** Reset the arena-needed flag. *)
+val reset_needs_arena : unit -> unit
+
 (** Mark that [crane_itree.h] is needed (reified ITree types in output). *)
 val require_itree_header : unit -> unit
 
@@ -562,6 +571,23 @@ val extraction_loopify : bool -> qualid list -> unit
 
 (** Reset per-function loopify table. *)
 val reset_extraction_loopify : unit -> unit
+
+(** Check if arena (region) allocation is enabled globally for recursive
+    inductives. *)
+val arena : unit -> bool
+
+(** Check whether a specific inductive should use arena allocation (per-inductive
+    override first, then global [Crane Arena] setting). *)
+val should_arena : GlobRef.t -> bool
+
+(** Mark inductive types for arena (true) or non-arena (false) extraction.
+    @param b [true] to force arena allocation for the listed inductives,
+             [false] to opt them out (override the global [Crane Arena] setting)
+    @param l list of qualified inductive identifiers to configure *)
+val extraction_arena : bool -> qualid list -> unit
+
+(** Reset per-inductive arena table. *)
+val reset_extraction_arena : unit -> unit
 
 (** {2 File comment} *)
 

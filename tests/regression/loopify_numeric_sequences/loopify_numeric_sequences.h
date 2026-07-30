@@ -1,6 +1,7 @@
 #ifndef INCLUDED_LOOPIFY_NUMERIC_SEQUENCES
 #define INCLUDED_LOOPIFY_NUMERIC_SEQUENCES
 
+#include "crane_fn.h"
 #include <any>
 #include <memory>
 #include <type_traits>

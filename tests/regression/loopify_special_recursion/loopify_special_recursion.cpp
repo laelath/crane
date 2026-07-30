@@ -102,7 +102,7 @@ List<uint64_t> LoopifySpecialRecursion::double_append(
       } else {
         const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l1.v());
         _stack.emplace_back(_Cont_Cons{a0});
-        _stack.emplace_back(_Enter{std::move(l2), a1.get()});
+        _stack.emplace_back(_Enter{std::move(l2), crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Cont_Cons>(_frame));
@@ -155,10 +155,10 @@ List<uint64_t> LoopifySpecialRecursion::remove_if_sum_even(
         }();
         if ((UINT64_C(2) ? (a0 + next_val) % UINT64_C(2) : (a0 + next_val)) ==
             UINT64_C(0)) {
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         } else {
           _stack.emplace_back(_Resume1{a0});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       }
     } else {
@@ -253,8 +253,8 @@ List<uint64_t> LoopifySpecialRecursion::collect_sorted(
       } else {
         const auto &[a0, a1, a2] =
             std::get<typename LoopifySpecialRecursion::tree::Node>(t.v());
-        _stack.emplace_back(_After_Node{a0.get(), a1});
-        _stack.emplace_back(_Enter{a2.get()});
+        _stack.emplace_back(_After_Node{crane_raw(a0), a1});
+        _stack.emplace_back(_Enter{crane_raw(a2)});
       }
     } else if (std::holds_alternative<_After_Node>(_frame)) {
       auto _f = std::move(std::get<_After_Node>(_frame));
@@ -303,9 +303,9 @@ uint64_t LoopifySpecialRecursion::sum_odd_indices_aux(
         const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
         if ((UINT64_C(2) ? idx % UINT64_C(2) : idx) == UINT64_C(1)) {
           _stack.emplace_back(_Resume1{a0});
-          _stack.emplace_back(_Enter{(idx + UINT64_C(1)), a1.get()});
+          _stack.emplace_back(_Enter{(idx + UINT64_C(1)), crane_raw(a1)});
         } else {
-          _stack.emplace_back(_Enter{(idx + UINT64_C(1)), a1.get()});
+          _stack.emplace_back(_Enter{(idx + UINT64_C(1)), crane_raw(a1)});
         }
       }
     } else {
@@ -362,14 +362,14 @@ uint64_t LoopifySpecialRecursion::categorize_by(
         const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
         if (k < a0) {
           _stack.emplace_back(_Resume1{UINT64_C(3)});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         } else {
           if (a0 == k) {
             _stack.emplace_back(_Resume2{UINT64_C(2)});
-            _stack.emplace_back(_Enter{a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a1)});
           } else {
             _stack.emplace_back(_Resume3{UINT64_C(1)});
-            _stack.emplace_back(_Enter{a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a1)});
           }
         }
       }
@@ -420,12 +420,12 @@ List<uint64_t> LoopifySpecialRecursion::between(
         if (lo <= a0) {
           if (a0 <= hi) {
             _stack.emplace_back(_Resume1{a0});
-            _stack.emplace_back(_Enter{a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a1)});
           } else {
-            _stack.emplace_back(_Enter{a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a1)});
           }
         } else {
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       }
     } else {
@@ -467,7 +467,7 @@ List<uint64_t> LoopifySpecialRecursion::merge_levels(
         const auto &[a0, a1] =
             std::get<typename List<List<uint64_t>>::Cons>(ll.v());
         _stack.emplace_back(_Resume_Cons{a0});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Cons>(_frame));

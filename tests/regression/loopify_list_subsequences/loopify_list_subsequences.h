@@ -1,6 +1,7 @@
 #ifndef INCLUDED_LOOPIFY_LIST_SUBSEQUENCES
 #define INCLUDED_LOOPIFY_LIST_SUBSEQUENCES
 
+#include "crane_fn.h"
 #include <any>
 #include <memory>
 #include <utility>

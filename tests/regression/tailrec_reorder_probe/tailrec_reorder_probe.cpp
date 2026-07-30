@@ -23,7 +23,7 @@ TailrecReorderProbe::dual_accum(const TailrecReorderProbe::mylist<uint64_t> &l,
       _loop_acc2 =
           mylist<uint64_t>::mycons((a0 + UINT64_C(1)), std::move(_loop_acc2));
       _loop_acc1 = mylist<uint64_t>::mycons(a0, std::move(_loop_acc1));
-      _loop_l = a1.get();
+      _loop_l = crane_raw(a1);
     }
   }
 }
@@ -56,8 +56,8 @@ TailrecReorderProbe::weave(const TailrecReorderProbe::mylist<uint64_t> &l1,
                 _loop_l2->v());
         _loop_acc = mylist<uint64_t>::mycons(
             a00, mylist<uint64_t>::mycons(a0, std::move(_loop_acc)));
-        _loop_l2 = a10.get();
-        _loop_l1 = a1.get();
+        _loop_l2 = crane_raw(a10);
+        _loop_l1 = crane_raw(a1);
       }
     }
   }

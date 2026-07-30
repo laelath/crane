@@ -189,6 +189,21 @@ VERNAC COMMAND EXTEND ResetExtractionLoopify CLASSIFIED AS SIDEFF
   -> { reset_extraction_loopify () }
 END
 
+VERNAC COMMAND EXTEND ExtractionArena CLASSIFIED AS SIDEFF
+| [ "Crane" "Arena" ne_global_list(l) ]
+  -> { extraction_arena true l }
+END
+
+VERNAC COMMAND EXTEND ExtractionNoArena CLASSIFIED AS SIDEFF
+| [ "Crane" "NoArena" ne_global_list(l) ]
+  -> { extraction_arena false l }
+END
+
+VERNAC COMMAND EXTEND ResetExtractionArena CLASSIFIED AS SIDEFF
+| [ "Crane" "Reset" "Arena" ]
+  -> { reset_extraction_arena () }
+END
+
 VERNAC COMMAND EXTEND ExtractionImplicit CLASSIFIED AS SIDEFF
 (* Custom implicit arguments of some csts/inds/constructors *)
 | [ "Crane" "Extraction" "Implicit" global(r) "[" crane_int_or_id_list(l) "]" ]

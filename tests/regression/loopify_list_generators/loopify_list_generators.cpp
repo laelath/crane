@@ -169,7 +169,7 @@ List<uint64_t> LoopifyListGenerators::replicate_each(
         const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
         List<uint64_t> reps = replicate_elem(n, a0);
         _stack.emplace_back(_Resume_Cons{std::move(std::move(reps))});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -214,7 +214,7 @@ List<std::pair<uint64_t, uint64_t>> LoopifyListGenerators::enumerate_aux(
       } else {
         const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
         _stack.emplace_back(_Resume_Cons{std::make_pair(idx, a0)});
-        _stack.emplace_back(_Enter{a1.get(), (idx + UINT64_C(1))});
+        _stack.emplace_back(_Enter{crane_raw(a1), (idx + UINT64_C(1))});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Cons>(_frame));

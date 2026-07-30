@@ -34,7 +34,7 @@ List<List<uint64_t>> LoopifyListSubsequences::map_cons_helper(
         const auto &[a0, a1] =
             std::get<typename List<List<uint64_t>>::Cons>(ll.v());
         _stack.emplace_back(_Resume_Cons{List<uint64_t>::cons(x, a0)});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -124,7 +124,7 @@ List<List<uint64_t>> LoopifyListSubsequences::inits_fuel(
         } else {
           const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
           _stack.emplace_back(_Cont_Cons{a0});
-          _stack.emplace_back(_Enter{a1.get(), fuel_});
+          _stack.emplace_back(_Enter{crane_raw(a1), fuel_});
         }
       }
     } else {
@@ -176,7 +176,7 @@ List<uint64_t> LoopifyListSubsequences::init_list(
           _result = List<uint64_t>::nil();
         } else {
           _stack.emplace_back(_Resume_Cons{a0});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       }
     } else {
@@ -218,7 +218,7 @@ List<uint64_t> LoopifyListSubsequences::snoc(
       } else {
         const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
         _stack.emplace_back(_Resume_Cons{a0});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -240,7 +240,7 @@ uint64_t LoopifyListSubsequences::last_elem(const List<uint64_t> &l) {
       if (std::holds_alternative<typename List<uint64_t>::Nil>(_sv.v())) {
         return a0;
       } else {
-        _loop_l = a1.get();
+        _loop_l = crane_raw(a1);
       }
     }
   }
@@ -259,7 +259,7 @@ uint64_t LoopifyListSubsequences::nth_elem(uint64_t n,
       if (_loop_n == UINT64_C(0)) {
         return a0;
       } else {
-        _loop_l = a1.get();
+        _loop_l = crane_raw(a1);
         _loop_n =
             (((_loop_n - UINT64_C(1)) > _loop_n ? 0 : (_loop_n - UINT64_C(1))));
       }

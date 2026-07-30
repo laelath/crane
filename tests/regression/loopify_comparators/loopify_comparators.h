@@ -1,6 +1,7 @@
 #ifndef INCLUDED_LOOPIFY_COMPARATORS
 #define INCLUDED_LOOPIFY_COMPARATORS
 
+#include "crane_fn.h"
 #include <any>
 #include <memory>
 #include <utility>

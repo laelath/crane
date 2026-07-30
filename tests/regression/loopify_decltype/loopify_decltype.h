@@ -1,6 +1,7 @@
 #ifndef INCLUDED_LOOPIFY_DECLTYPE
 #define INCLUDED_LOOPIFY_DECLTYPE
 
+#include "crane_fn.h"
 #include <any>
 #include <memory>
 #include <utility>

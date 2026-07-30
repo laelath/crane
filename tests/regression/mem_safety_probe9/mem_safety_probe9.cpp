@@ -33,7 +33,7 @@ uint64_t MemSafetyProbe9::sum_fns(
         const auto &[a0, a1] = std::get<typename MemSafetyProbe9::mylist<
             std::function<uint64_t(uint64_t)>>::Mycons>(l.v());
         _stack.emplace_back(_Resume_Mycons{a0(UINT64_C(0))});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Mycons>(_frame));
@@ -82,7 +82,7 @@ MemSafetyProbe9::collect_subtree_sums(
             std::get<typename MemSafetyProbe9::tree::Node>(t.v());
         const MemSafetyProbe9::tree &a0_value = *a0;
         const MemSafetyProbe9::tree &a2_value = *a2;
-        _stack.emplace_back(_Resume_Node{a0.get()});
+        _stack.emplace_back(_Resume_Node{crane_raw(a0)});
         _stack.emplace_back(
             _Enter{mylist<std::function<uint64_t(uint64_t)>>::mycons(
                        [=](auto _xarg0) mutable {
@@ -90,7 +90,7 @@ MemSafetyProbe9::collect_subtree_sums(
                                                         a2_value);
                        },
                        std::move(acc)),
-                   a2.get()});
+                   crane_raw(a2)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Node>(_frame));
@@ -139,14 +139,14 @@ MemSafetyProbe9::collect_left_sums(
             std::get<typename MemSafetyProbe9::tree::Node>(t.v());
         const MemSafetyProbe9::tree &a0_value = *a0;
         const MemSafetyProbe9::tree &a2_value = *a2;
-        _stack.emplace_back(_Resume_Node{a0.get()});
+        _stack.emplace_back(_Resume_Node{crane_raw(a0)});
         _stack.emplace_back(
             _Enter{mylist<std::function<uint64_t(uint64_t)>>::mycons(
                        [=](auto _xarg0) mutable {
                          return _collect_left_sums_f(_xarg0, a0_value);
                        },
                        std::move(acc)),
-                   a2.get()});
+                   crane_raw(a2)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Node>(_frame));

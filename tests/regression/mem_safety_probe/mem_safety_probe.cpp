@@ -43,7 +43,7 @@ MemSafetyProbe::build_adders(
             _Resume_Mycons{[=](uint64_t _x0) mutable -> uint64_t {
               return a0.sum_values(_x0);
             }});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Mycons>(_frame));
@@ -88,7 +88,7 @@ uint64_t MemSafetyProbe::apply_all(
         const auto &[a0, a1] = std::get<typename MemSafetyProbe::mylist<
             std::function<uint64_t(uint64_t)>>::Mycons>(fns.v());
         _stack.emplace_back(_Resume_Mycons{a0(x)});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Mycons>(_frame));

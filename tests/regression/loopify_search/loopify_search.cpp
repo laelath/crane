@@ -68,11 +68,12 @@ uint64_t LoopifySearch::knapsack_fuel(
                   items.v());
           const auto &[weight, value] = a0;
           if (capacity < weight) {
-            _stack.emplace_back(_Enter{a1.get(), capacity, f});
+            _stack.emplace_back(_Enter{crane_raw(a1), capacity, f});
           } else {
-            _stack.emplace_back(_Cont1{a1.get(), capacity, f, value, weight});
+            _stack.emplace_back(
+                _Cont1{crane_raw(a1), capacity, f, value, weight});
             _stack.emplace_back(_Enter{
-                a1.get(),
+                crane_raw(a1),
                 (((capacity - weight) > capacity ? 0 : (capacity - weight))),
                 f});
           }
@@ -152,7 +153,7 @@ std::pair<uint64_t, uint64_t> LoopifySearch::majority(
       } else {
         const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
         _stack.emplace_back(_Cont_Cons{a0});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Cont_Cons>(_frame));
@@ -213,9 +214,9 @@ List<uint64_t> LoopifySearch::longest_increasing_subseq(
               std::get<typename List<uint64_t>::Cons>(_sv0.v());
           if (a0 < a00) {
             _stack.emplace_back(_Resume1{a0});
-            _stack.emplace_back(_Enter{a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a1)});
           } else {
-            _stack.emplace_back(_Enter{a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a1)});
           }
         }
       }
@@ -247,7 +248,7 @@ uint64_t LoopifySearch::nth_impl(uint64_t n, const List<uint64_t> &l) {
       } else {
         const auto &[a00, a10] =
             std::get<typename List<uint64_t>::Cons>(_loop_l->v());
-        _loop_l = a10.get();
+        _loop_l = crane_raw(a10);
         _loop_n = m;
       }
     }
@@ -292,7 +293,7 @@ List<uint64_t> LoopifySearch::take_impl(
         } else {
           const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
           _stack.emplace_back(_Resume_Cons{a0});
-          _stack.emplace_back(_Enter{a1.get(), m});
+          _stack.emplace_back(_Enter{crane_raw(a1), m});
         }
       }
     } else {
@@ -394,7 +395,7 @@ List<uint64_t> LoopifySearch::longest_run_aux(List<uint64_t> current_run,
         const auto &[a00, a10] =
             std::get<typename List<uint64_t>::Cons>(_sv0.v());
         if (a0 == a00) {
-          _loop_l = a1.get();
+          _loop_l = crane_raw(a1);
           _loop_current_run =
               List<uint64_t>::cons(a0, std::move(_loop_current_run));
         } else {
@@ -407,7 +408,7 @@ List<uint64_t> LoopifySearch::longest_run_aux(List<uint64_t> current_run,
           } else {
             new_best = new_run;
           }
-          _loop_l = a1.get();
+          _loop_l = crane_raw(a1);
           _loop_best_run = std::move(new_best);
           _loop_current_run = List<uint64_t>::nil();
         }
@@ -519,9 +520,9 @@ List<uint64_t> LoopifySearch::lis(
               std::get<typename List<uint64_t>::Cons>(_sv0.v());
           if (a0 < a00) {
             _stack.emplace_back(_Resume1{a0});
-            _stack.emplace_back(_Enter{a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a1)});
           } else {
-            _stack.emplace_back(_Enter{a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a1)});
           }
         }
       }
@@ -576,8 +577,8 @@ bool LoopifySearch::subset_sum_fuel(
           _result = target == UINT64_C(0);
         } else {
           const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
-          _stack.emplace_back(_Cont_Cons{a0, a1.get(), f, target});
-          _stack.emplace_back(_Enter{a1.get(), target, f});
+          _stack.emplace_back(_Cont_Cons{a0, crane_raw(a1), f, target});
+          _stack.emplace_back(_Enter{crane_raw(a1), target, f});
         }
       }
     } else {
@@ -678,7 +679,7 @@ bool LoopifySearch::elem_impl(uint64_t x, const List<uint64_t> &l) {
       if (x == a0) {
         return true;
       } else {
-        _loop_l = a1.get();
+        _loop_l = crane_raw(a1);
       }
     }
   }
@@ -916,7 +917,7 @@ std::pair<List<uint64_t>, List<uint64_t>> LoopifySearch::split_list(
           const auto &[a00, a10] =
               std::get<typename List<uint64_t>::Cons>(_sv0.v());
           _stack.emplace_back(_Cont_Cons{a0, a00});
-          _stack.emplace_back(_Enter{a10.get()});
+          _stack.emplace_back(_Enter{crane_raw(a10)});
         }
       }
     } else {
@@ -1114,7 +1115,7 @@ List<uint64_t> LoopifySearch::remove_first(
           _result = *a1;
         } else {
           _stack.emplace_back(_Resume1{a0});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       }
     } else {
@@ -1161,7 +1162,7 @@ List<List<uint64_t>> LoopifySearch::map_cons(
         const auto &[a0, a1] =
             std::get<typename List<List<uint64_t>>::Cons>(lsts.v());
         _stack.emplace_back(_Resume_Cons{List<uint64_t>::cons(x, a0)});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -1294,7 +1295,7 @@ LoopifySearch::linear_search_aux(uint64_t x, const List<uint64_t> &l,
         return std::make_optional<uint64_t>(_loop_idx);
       } else {
         _loop_idx = (_loop_idx + 1);
-        _loop_l = a1.get();
+        _loop_l = crane_raw(a1);
       }
     }
   }
@@ -1340,9 +1341,9 @@ List<uint64_t> LoopifySearch::all_indices_aux(
         const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
         if (x == a0) {
           _stack.emplace_back(_Resume1{idx});
-          _stack.emplace_back(_Enter{(idx + 1), a1.get()});
+          _stack.emplace_back(_Enter{(idx + 1), crane_raw(a1)});
         } else {
-          _stack.emplace_back(_Enter{(idx + 1), a1.get()});
+          _stack.emplace_back(_Enter{(idx + 1), crane_raw(a1)});
         }
       }
     } else {
@@ -1392,7 +1393,7 @@ uint64_t LoopifySearch::min_element(
           _result = std::move(a0);
         } else {
           _stack.emplace_back(_Cont_Cons{a0});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       }
     } else {

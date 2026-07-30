@@ -1,6 +1,7 @@
 #ifndef INCLUDED_LOOPIFY_GENERATORS
 #define INCLUDED_LOOPIFY_GENERATORS
 
+#include "crane_fn.h"
 #include <any>
 #include <memory>
 #include <type_traits>
@@ -204,7 +205,7 @@ struct LoopifyGenerators {
             const auto &[a00, a10] =
                 std::get<typename List<uint64_t>::Cons>(l2.v());
             _stack.emplace_back(_Resume_Cons{f(a0, a00)});
-            _stack.emplace_back(_Enter{a10.get(), a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a10), crane_raw(a1)});
           }
         }
       } else {

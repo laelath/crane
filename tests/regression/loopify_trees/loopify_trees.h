@@ -1,6 +1,7 @@
 #ifndef INCLUDED_LOOPIFY_TREES
 #define INCLUDED_LOOPIFY_TREES
 
+#include "crane_fn.h"
 #include <any>
 #include <memory>
 #include <type_traits>
@@ -669,8 +670,8 @@ struct LoopifyTrees {
           } else {
             const auto &[a0, a1] = std::get<typename List<rose>::Cons>(cs.v());
             const auto &[a00, a10] = std::get<typename rose::RNode>(a0.v());
-            _stack.emplace_back(_After_RNode{a10.get(), g, f(a00)});
-            _stack.emplace_back(_Enter{a1.get(), g});
+            _stack.emplace_back(_After_RNode{crane_raw(a10), g, f(a00)});
+            _stack.emplace_back(_Enter{crane_raw(a1), g});
           }
         }
       } else if (std::holds_alternative<_After_RNode>(_frame)) {
@@ -762,8 +763,8 @@ struct LoopifyTrees {
           if (p(a1)) {
             _result = true;
           } else {
-            _stack.emplace_back(_After2{a0.get()});
-            _stack.emplace_back(_Enter{a2.get()});
+            _stack.emplace_back(_After2{crane_raw(a0)});
+            _stack.emplace_back(_Enter{crane_raw(a2)});
           }
         }
       } else if (std::holds_alternative<_After2>(_frame)) {

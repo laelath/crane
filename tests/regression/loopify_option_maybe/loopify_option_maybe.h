@@ -1,6 +1,7 @@
 #ifndef INCLUDED_LOOPIFY_OPTION_MAYBE
 #define INCLUDED_LOOPIFY_OPTION_MAYBE
 
+#include "crane_fn.h"
 #include <any>
 #include <memory>
 #include <optional>

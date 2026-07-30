@@ -1,6 +1,7 @@
 #ifndef INCLUDED_DEEP_DESTRUCT
 #define INCLUDED_DEEP_DESTRUCT
 
+#include "crane_fn.h"
 #include <any>
 #include <memory>
 #include <type_traits>
@@ -141,7 +142,7 @@ struct DeepDestruct {
         } else {
           const auto &[a0, a1] = std::get<typename mylist<T1>::Mycons>(m.v());
           _stack.emplace_back(_Resume_Mycons{*a1, a0});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       } else {
         auto _f = std::move(std::get<_Resume_Mycons>(_frame));
@@ -186,7 +187,7 @@ struct DeepDestruct {
         } else {
           const auto &[a0, a1] = std::get<typename mylist<T1>::Mycons>(m.v());
           _stack.emplace_back(_Resume_Mycons{*a1, a0});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       } else {
         auto _f = std::move(std::get<_Resume_Mycons>(_frame));

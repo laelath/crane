@@ -1,6 +1,7 @@
 #ifndef INCLUDED_LOOPIFY_POLYMORPHIC
 #define INCLUDED_LOOPIFY_POLYMORPHIC
 
+#include "crane_fn.h"
 #include <any>
 #include <memory>
 #include <optional>
@@ -144,7 +145,7 @@ struct LoopifyPolymorphic {
         } else {
           const auto &[a0, a1] = std::get<typename List<T1>::Cons>(l.v());
           _stack.emplace_back(_Resume_Cons{UINT64_C(1)});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       } else {
         auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -188,7 +189,7 @@ struct LoopifyPolymorphic {
           const auto &[a0, a1] = std::get<typename List<T1>::Cons>(l.v());
           _stack.emplace_back(
               _Resume_Cons{List<T1>::cons(a0, List<T1>::nil())});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       } else {
         auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -232,7 +233,7 @@ struct LoopifyPolymorphic {
         } else {
           const auto &[a0, a1] = std::get<typename List<T1>::Cons>(l1.v());
           _stack.emplace_back(_Resume_Cons{a0});
-          _stack.emplace_back(_Enter{std::move(l2), a1.get()});
+          _stack.emplace_back(_Enter{std::move(l2), crane_raw(a1)});
         }
       } else {
         auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -253,7 +254,7 @@ struct LoopifyPolymorphic {
         if (std::holds_alternative<typename List<T1>::Nil>(_sv.v())) {
           return std::make_optional<T1>(a0);
         } else {
-          _loop_l = a1.get();
+          _loop_l = crane_raw(a1);
         }
       }
     }
@@ -297,7 +298,7 @@ struct LoopifyPolymorphic {
           } else {
             const auto &[a0, a1] = std::get<typename List<T1>::Cons>(l.v());
             _stack.emplace_back(_Resume_Cons{a0});
-            _stack.emplace_back(_Enter{a1.get(), n_});
+            _stack.emplace_back(_Enter{crane_raw(a1), n_});
           }
         }
       } else {
@@ -339,7 +340,7 @@ struct LoopifyPolymorphic {
         if (_loop_n == UINT64_C(0)) {
           return std::make_optional<T1>(a0);
         } else {
-          _loop_l = a1.get();
+          _loop_l = crane_raw(a1);
           _loop_n = ((
               (_loop_n - UINT64_C(1)) > _loop_n ? 0 : (_loop_n - UINT64_C(1))));
         }
@@ -381,9 +382,9 @@ struct LoopifyPolymorphic {
           const auto &[a0, a1] = std::get<typename List<T1>::Cons>(l.v());
           if (p(a0)) {
             _stack.emplace_back(_Resume1{a0});
-            _stack.emplace_back(_Enter{a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a1)});
           } else {
-            _stack.emplace_back(_Enter{a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a1)});
           }
         }
       } else {
@@ -427,7 +428,7 @@ struct LoopifyPolymorphic {
         } else {
           const auto &[a0, a1] = std::get<typename List<T1>::Cons>(l.v());
           _stack.emplace_back(_Resume_Cons{f(a0)});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       } else {
         auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -477,7 +478,7 @@ struct LoopifyPolymorphic {
           } else {
             const auto &[a00, a10] = std::get<typename List<T2>::Cons>(l2.v());
             _stack.emplace_back(_Resume_Cons{std::make_pair(a0, a00)});
-            _stack.emplace_back(_Enter{a10.get(), a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a10), crane_raw(a1)});
           }
         }
       } else {
@@ -524,7 +525,7 @@ struct LoopifyPolymorphic {
               std::get<typename List<std::pair<T1, T2>>::Cons>(l.v());
           const auto &[a, b] = a0;
           _stack.emplace_back(_Cont_a{a, b});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       } else {
         auto _f = std::move(std::get<_Cont_a>(_frame));
@@ -573,7 +574,7 @@ struct LoopifyPolymorphic {
         } else {
           const auto &[a0, a1] = std::get<typename List<T1>::Cons>(l.v());
           _stack.emplace_back(_Cont_Cons{a0});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       } else {
         auto _f = std::move(std::get<_Cont_Cons>(_frame));
@@ -604,7 +605,7 @@ struct LoopifyPolymorphic {
         if (eq(x, a0)) {
           return true;
         } else {
-          _loop_l = a1.get();
+          _loop_l = crane_raw(a1);
         }
       }
     }

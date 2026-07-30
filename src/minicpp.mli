@@ -255,6 +255,9 @@ and cpp_expr =
       (** Lambda: params, optional return type, body, capture_by_value flag *)
   | CPPvisit  (** std::visit for variant pattern matching *)
   | CPPmk_shared of cpp_type  (** std::make_shared<T> factory function *)
+  | CPParena_alloc of cpp_type
+      (** crane::arena_alloc<T> factory: allocates a T in the ambient arena,
+          returns raw T*.  Used like [CPPmk_shared] for arena-mode fields. *)
   | CPPoverloaded of cpp_expr list
       (** Overloaded visitor set for variant matching *)
   | CPPstructmk of GlobRef.t * cpp_type list * cpp_expr list

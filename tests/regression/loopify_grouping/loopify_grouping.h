@@ -1,6 +1,7 @@
 #ifndef INCLUDED_LOOPIFY_GROUPING
 #define INCLUDED_LOOPIFY_GROUPING
 
+#include "crane_fn.h"
 #include <any>
 #include <memory>
 #include <utility>

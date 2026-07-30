@@ -1,6 +1,7 @@
 #ifndef INCLUDED_LOOPIFY_SEQUENCES
 #define INCLUDED_LOOPIFY_SEQUENCES
 
+#include "crane_fn.h"
 #include <any>
 #include <memory>
 #include <type_traits>
@@ -163,7 +164,7 @@ struct LoopifySequences {
             _result = std::move(a0);
           } else {
             _stack.emplace_back(_Resume_Cons{a0});
-            _stack.emplace_back(_Enter{a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a1)});
           }
         }
       } else {
@@ -230,7 +231,7 @@ struct LoopifySequences {
           _result = List<List<T1>>::nil();
         } else {
           uint64_t f = fuel - 1;
-          auto all_nil_impl = [](auto &, const List<List<T1>> &l) -> bool {
+          auto all_nil_impl = [&](auto &, const List<List<T1>> &l) -> bool {
             const List<List<T1>> *_loop_l = &l;
             while (true) {
               if (std::holds_alternative<typename List<List<T1>>::Nil>(
@@ -240,7 +241,7 @@ struct LoopifySequences {
                 const auto &[a0, a1] =
                     std::get<typename List<List<T1>>::Cons>(_loop_l->v());
                 if (std::holds_alternative<typename List<T1>::Nil>(a0.v())) {
-                  _loop_l = a1.get();
+                  _loop_l = crane_raw(a1);
                 } else {
                   return false;
                 }
@@ -449,7 +450,7 @@ struct LoopifySequences {
           const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
           if (p(a0)) {
             _stack.emplace_back(_Resume1{a0});
-            _stack.emplace_back(_Enter{a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a1)});
           } else {
             _result = List<uint64_t>::nil();
           }
@@ -474,7 +475,7 @@ struct LoopifySequences {
         const auto &[a0, a1] =
             std::get<typename List<uint64_t>::Cons>(_loop_l->v());
         if (p(a0)) {
-          _loop_l = a1.get();
+          _loop_l = crane_raw(a1);
         } else {
           return List<uint64_t>::cons(a0, *a1);
         }
@@ -532,7 +533,7 @@ struct LoopifySequences {
         } else {
           const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
           _stack.emplace_back(_Resume_Cons{p(a0)});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       } else {
         auto _f = std::move(std::get<_Resume_Cons>(_frame));

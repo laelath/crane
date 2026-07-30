@@ -33,7 +33,7 @@ List<uint64_t> LoopifyStrings::append(
       } else {
         const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l1.v());
         _stack.emplace_back(_Resume_Cons{a0});
-        _stack.emplace_back(_Enter{std::move(l2), a1.get()});
+        _stack.emplace_back(_Enter{std::move(l2), crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -78,7 +78,7 @@ List<uint64_t> LoopifyStrings::join_with(
           _result = List<uint64_t>::cons(a0, List<uint64_t>::nil());
         } else {
           _stack.emplace_back(_Resume_Cons{a0});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       }
     } else {
@@ -259,7 +259,7 @@ List<uint64_t> LoopifyStrings::reverse(
         const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
         _stack.emplace_back(
             _Resume_Cons{List<uint64_t>::cons(a0, List<uint64_t>::nil())});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -313,7 +313,7 @@ bool LoopifyStrings::list_eq(
           const auto &[a00, a10] =
               std::get<typename List<uint64_t>::Cons>(l2.v());
           _stack.emplace_back(_Resume_Cons{a0 == a00});
-          _stack.emplace_back(_Enter{a10.get(), a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a10), crane_raw(a1)});
         }
       }
     } else {
@@ -363,7 +363,7 @@ List<uint64_t> LoopifyStrings::intersperse(
           _result = List<uint64_t>::cons(a0, List<uint64_t>::nil());
         } else {
           _stack.emplace_back(_Resume_Cons{a0});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       }
     } else {
@@ -412,7 +412,7 @@ List<uint64_t> LoopifyStrings::intercalate(
           _result = std::move(a0);
         } else {
           _stack.emplace_back(_Resume_Cons{a0});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       }
     } else {
@@ -505,13 +505,14 @@ List<std::pair<uint64_t, uint64_t>> LoopifyStrings::run_length_aux(
       } else {
         const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
         if (a0 == current) {
-          _stack.emplace_back(_Enter{a1.get(), (count + UINT64_C(1)), current});
+          _stack.emplace_back(
+              _Enter{crane_raw(a1), (count + UINT64_C(1)), current});
         } else {
           if (count == UINT64_C(0)) {
-            _stack.emplace_back(_Enter{a1.get(), UINT64_C(1), a0});
+            _stack.emplace_back(_Enter{crane_raw(a1), UINT64_C(1), a0});
           } else {
             _stack.emplace_back(_Resume1{std::make_pair(current, count)});
-            _stack.emplace_back(_Enter{a1.get(), UINT64_C(1), a0});
+            _stack.emplace_back(_Enter{crane_raw(a1), UINT64_C(1), a0});
           }
         }
       }

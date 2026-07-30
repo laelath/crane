@@ -16,7 +16,7 @@ std::optional<uint64_t> LoopifyOption::lookup_opt(
       if (a0.first == key) {
         return std::make_optional<uint64_t>(a0.second);
       } else {
-        _loop_l = a1.get();
+        _loop_l = crane_raw(a1);
       }
     }
   }

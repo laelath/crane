@@ -39,8 +39,8 @@ LoopifyMoreTrees::tree LoopifyMoreTrees::mirror(
       } else {
         const auto &[a0, a1, a2] =
             std::get<typename LoopifyMoreTrees::tree::Node>(t.v());
-        _stack.emplace_back(_After_Node{a2.get(), a1});
-        _stack.emplace_back(_Enter{a0.get()});
+        _stack.emplace_back(_After_Node{crane_raw(a2), a1});
+        _stack.emplace_back(_Enter{crane_raw(a0)});
       }
     } else if (std::holds_alternative<_After_Node>(_frame)) {
       auto _f = std::move(std::get<_After_Node>(_frame));
@@ -106,8 +106,8 @@ bool LoopifyMoreTrees::same_shape(
         } else {
           const auto &[a00, a10, a20] =
               std::get<typename LoopifyMoreTrees::tree::Node>(t2.v());
-          _stack.emplace_back(_After_Node{a00.get(), a0.get()});
-          _stack.emplace_back(_Enter{a20.get(), a2.get()});
+          _stack.emplace_back(_After_Node{crane_raw(a00), crane_raw(a0)});
+          _stack.emplace_back(_Enter{crane_raw(a20), crane_raw(a2)});
         }
       }
     } else if (std::holds_alternative<_After_Node>(_frame)) {
@@ -166,8 +166,8 @@ List<uint64_t> LoopifyMoreTrees::tree_to_list(
         const auto &[a0, a1, a2] =
             std::get<typename LoopifyMoreTrees::tree::Node>(t.v());
         _stack.emplace_back(_After_Node{
-            a0.get(), List<uint64_t>::cons(a1, List<uint64_t>::nil())});
-        _stack.emplace_back(_Enter{a2.get()});
+            crane_raw(a0), List<uint64_t>::cons(a1, List<uint64_t>::nil())});
+        _stack.emplace_back(_Enter{crane_raw(a2)});
       }
     } else if (std::holds_alternative<_After_Node>(_frame)) {
       auto _f = std::move(std::get<_After_Node>(_frame));
@@ -224,8 +224,8 @@ uint64_t LoopifyMoreTrees::count_nodes(
       } else {
         const auto &[a0, a1, a2] =
             std::get<typename LoopifyMoreTrees::tree::Node>(t.v());
-        _stack.emplace_back(_After_Node{a0.get(), UINT64_C(1)});
-        _stack.emplace_back(_Enter{a2.get()});
+        _stack.emplace_back(_After_Node{crane_raw(a0), UINT64_C(1)});
+        _stack.emplace_back(_Enter{crane_raw(a2)});
       }
     } else if (std::holds_alternative<_After_Node>(_frame)) {
       auto _f = std::move(std::get<_After_Node>(_frame));
@@ -348,8 +348,8 @@ uint64_t LoopifyMoreTrees::sum_of_max_branches(
       } else {
         const auto &[a0, a1, a2] =
             std::get<typename LoopifyMoreTrees::tree::Node>(t.v());
-        _stack.emplace_back(_After_Node{a0.get(), a1});
-        _stack.emplace_back(_Enter{a2.get()});
+        _stack.emplace_back(_After_Node{crane_raw(a0), a1});
+        _stack.emplace_back(_Enter{crane_raw(a2)});
       }
     } else if (std::holds_alternative<_After_Node>(_frame)) {
       auto _f = std::move(std::get<_After_Node>(_frame));
@@ -404,10 +404,10 @@ LoopifyMoreTrees::tree LoopifyMoreTrees::insert_bst(
             std::get<typename LoopifyMoreTrees::tree::Node>(t.v());
         if (x <= a1) {
           _stack.emplace_back(_Resume1{*a2, a1});
-          _stack.emplace_back(_Enter{a0.get()});
+          _stack.emplace_back(_Enter{crane_raw(a0)});
         } else {
           _stack.emplace_back(_Resume2{a1, *a0});
-          _stack.emplace_back(_Enter{a2.get()});
+          _stack.emplace_back(_Enter{crane_raw(a2)});
         }
       }
     } else if (std::holds_alternative<_Resume1>(_frame)) {
@@ -451,7 +451,7 @@ LoopifyMoreTrees::tree LoopifyMoreTrees::build_bst(
       } else {
         const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
         _stack.emplace_back(_Resume_Cons{a0});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -494,7 +494,7 @@ List<uint64_t> LoopifyMoreTrees::append_lists(
       } else {
         const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l1.v());
         _stack.emplace_back(_Resume_Cons{a0});
-        _stack.emplace_back(_Enter{std::move(l2), a1.get()});
+        _stack.emplace_back(_Enter{std::move(l2), crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -535,7 +535,7 @@ List<uint64_t> LoopifyMoreTrees::flatten(
         const auto &[a0, a1] =
             std::get<typename List<List<uint64_t>>::Cons>(ll.v());
         _stack.emplace_back(_Resume_Cons{a0});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -579,7 +579,7 @@ List<List<uint64_t>> LoopifyMoreTrees::map_tree_to_list(
         const auto &[a0, a1] =
             std::get<typename List<LoopifyMoreTrees::tree>::Cons>(lt.v());
         _stack.emplace_back(_Resume_Cons{tree_to_list(a0)});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -637,7 +637,7 @@ List<LoopifyMoreTrees::tree> LoopifyMoreTrees::append_trees(
         const auto &[a0, a1] =
             std::get<typename List<LoopifyMoreTrees::tree>::Cons>(l1.v());
         _stack.emplace_back(_Resume_Cons{a0});
-        _stack.emplace_back(_Enter{std::move(l2), a1.get()});
+        _stack.emplace_back(_Enter{std::move(l2), crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -682,7 +682,7 @@ List<LoopifyMoreTrees::tree> LoopifyMoreTrees::concat_map_children(
         const auto &[a0, a1] =
             std::get<typename List<LoopifyMoreTrees::tree>::Cons>(lt.v());
         _stack.emplace_back(_Resume_Cons{tree_children(a0)});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Cons>(_frame));

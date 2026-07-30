@@ -33,7 +33,7 @@ uint64_t MemSafetyProbe13::sum_list(
             std::get<typename MemSafetyProbe13::mylist<uint64_t>::Mycons>(
                 l.v());
         _stack.emplace_back(_Resume_Mycons{a0});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Mycons>(_frame));
@@ -99,8 +99,8 @@ MemSafetyProbe13::tree_vals_and_fns(
             std::get<typename MemSafetyProbe13::tree::Node>(t.v());
         const MemSafetyProbe13::tree &a0_value = *a0;
         const MemSafetyProbe13::tree &a2_value = *a2;
-        _stack.emplace_back(_Cont_Node{a0_value, a1, a2.get()});
-        _stack.emplace_back(_Enter{a0.get()});
+        _stack.emplace_back(_Cont_Node{a0_value, a1, crane_raw(a2)});
+        _stack.emplace_back(_Enter{crane_raw(a0)});
       }
     } else if (std::holds_alternative<_Cont_Node>(_frame)) {
       auto _f = std::move(std::get<_Cont_Node>(_frame));
@@ -221,7 +221,7 @@ MemSafetyProbe13::depth_fns(
           return ((parent_val + a1) + n);
         };
         _stack.emplace_back(_Resume_Node{std::move(f)});
-        _stack.emplace_back(_Enter{a1, a0.get()});
+        _stack.emplace_back(_Enter{a1, crane_raw(a0)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Node>(_frame));
@@ -274,8 +274,8 @@ MemSafetyProbe13::ftree MemSafetyProbe13::tree_to_ftree(
         const MemSafetyProbe13::tree &a0_value = *a0;
         const MemSafetyProbe13::tree &a2_value = *a2;
         _stack.emplace_back(_After_Node{
-            a0.get(), [=](uint64_t n) mutable { return (a1 + n); }});
-        _stack.emplace_back(_Enter{a2.get()});
+            crane_raw(a0), [=](uint64_t n) mutable { return (a1 + n); }});
+        _stack.emplace_back(_Enter{crane_raw(a2)});
       }
     } else if (std::holds_alternative<_After_Node>(_frame)) {
       auto _f = std::move(std::get<_After_Node>(_frame));
@@ -335,8 +335,8 @@ MemSafetyProbe13::flatten_tree_fns(
         const MemSafetyProbe13::tree &a0_value = *a0;
         const MemSafetyProbe13::tree &a2_value = *a2;
         _stack.emplace_back(_After_Node{
-            a0.get(), [=](uint64_t n) mutable { return (a1 + n); }});
-        _stack.emplace_back(_Enter{a2.get()});
+            crane_raw(a0), [=](uint64_t n) mutable { return (a1 + n); }});
+        _stack.emplace_back(_Enter{crane_raw(a2)});
       }
     } else if (std::holds_alternative<_After_Node>(_frame)) {
       auto _f = std::move(std::get<_After_Node>(_frame));

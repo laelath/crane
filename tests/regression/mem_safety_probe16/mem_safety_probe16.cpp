@@ -33,7 +33,7 @@ uint64_t MemSafetyProbe16::sum_list(
             std::get<typename MemSafetyProbe16::mylist<uint64_t>::Mycons>(
                 l.v());
         _stack.emplace_back(_Resume_Mycons{a0});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Mycons>(_frame));
@@ -83,7 +83,7 @@ MemSafetyProbe16::build_summers(
             _Resume_Mycons{[=](uint64_t _x0) mutable -> uint64_t {
               return a0.make_summer(_x0);
             }});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Mycons>(_frame));
@@ -128,7 +128,7 @@ uint64_t MemSafetyProbe16::apply_fns(
         const auto &[a0, a1] = std::get<typename MemSafetyProbe16::mylist<
             std::function<uint64_t(uint64_t)>>::Mycons>(fns.v());
         _stack.emplace_back(_Resume_Mycons{a0(x)});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Mycons>(_frame));
@@ -251,7 +251,7 @@ MemSafetyProbe16::mylist<uint64_t> MemSafetyProbe16::zip_apply(
               std::get<typename MemSafetyProbe16::mylist<uint64_t>::Mycons>(
                   vals.v());
           _stack.emplace_back(_Resume_Mycons{a0(a00)});
-          _stack.emplace_back(_Enter{a10.get(), a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a10), crane_raw(a1)});
         }
       }
     } else {

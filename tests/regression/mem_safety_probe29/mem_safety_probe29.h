@@ -1,6 +1,7 @@
 #ifndef INCLUDED_MEM_SAFETY_PROBE29
 #define INCLUDED_MEM_SAFETY_PROBE29
 
+#include "crane_fn.h"
 #include <memory>
 #include <type_traits>
 #include <utility>

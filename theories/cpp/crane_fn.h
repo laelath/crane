@@ -3,6 +3,12 @@
 //
 // Runtime helper for storing a concrete callable into a type-erased
 // [std::any] field.
+#pragma once
+#include <any>
+#include <functional>
+#include <memory>
+#include <type_traits>
+#include <utility>
 //
 // When a value-dependent function type is erased to [std::any], the
 // application site reads the callable back with
@@ -10,6 +16,19 @@
 // site must store that same canonical representation rather than the raw
 // closure (otherwise [any_cast] throws [std::bad_any_cast]).
 //
+// [crane_raw] extracts a raw pointer from either a std::shared_ptr<T> (via
+// .get()) or an already-raw T* (identity), chosen by overload resolution.
+// Loopify's iterative-loop rewriting extracts a raw pointer from a recursive
+// child field the same way regardless of whether that field is the default
+// [std::shared_ptr<T>] representation or (under `Crane Arena`) already a raw
+// [T*] -- so codegen need not track, at every extraction site, which
+// representation a given field uses.
+template <typename T> T *crane_raw(const std::shared_ptr<T> &p) noexcept {
+  return p.get();
+}
+
+template <typename T> T *crane_raw(T *p) noexcept { return p; }
+
 // [crane_erase_fn] adapts an arbitrary callable to
 // [std::function<std::any(std::any...)>] and boxes the result into [std::any].
 // Two cases:
@@ -26,11 +45,6 @@
 //
 // Emitted as a global (like [ITree] in crane_itree.h) rather than in
 // [namespace crane] so the extractor can reference it with a plain identifier.
-#pragma once
-#include <any>
-#include <functional>
-#include <type_traits>
-#include <utility>
 
 // Unboxes a boxed argument for parameter type [A], unless [A] is itself
 // [std::any] — a declared-erased parameter (e.g. a value-dependent domain

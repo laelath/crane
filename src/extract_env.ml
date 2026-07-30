@@ -777,6 +777,16 @@ let spec_header si () =
     else
       h
   in
+  (* [crane::arena]/[arena_alloc] (for opt-in arena-mode recursive inductives)
+     live in the arena.h runtime header. *)
+  let h =
+    if Table.needs_arena ()
+       && not (List.exists (fun s -> String.equal s "arena.h") (himports @ imps))
+    then
+      h ++ mk_include_quoted "arena.h" ++ fnl ()
+    else
+      h
+  in
   let fun_concept =
     if is_bde () then
       "template <class From, class To>\n\

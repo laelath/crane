@@ -36,11 +36,11 @@ uint64_t LoopifyMatchArg::count_dots(
         switch (a0) {
         case Cell::DOT: {
           _stack.emplace_back(_Resume_Cons{UINT64_C(1)});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
           break;
         }
         default: {
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
         }
       }
@@ -86,7 +86,7 @@ uint64_t LoopifyMatchArg::my_length(
         const auto &[a0, a1] =
             std::get<typename List<LoopifyMatchArg::Cell>::Cons>(xs.v());
         _stack.emplace_back(_Resume_Cons{UINT64_C(1)});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Cons>(_frame));

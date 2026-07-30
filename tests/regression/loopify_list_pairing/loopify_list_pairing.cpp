@@ -34,7 +34,7 @@ std::pair<List<uint64_t>, List<uint64_t>> LoopifyListPairing::unzip(
             std::get<typename List<std::pair<uint64_t, uint64_t>>::Cons>(l.v());
         const auto &[a, b] = a0;
         _stack.emplace_back(_Cont_a{a, b});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Cont_a>(_frame));
@@ -79,7 +79,7 @@ std::pair<List<uint64_t>, List<uint64_t>> LoopifyListPairing::swizzle(
       } else {
         const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
         _stack.emplace_back(_Cont_Cons{a0});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Cont_Cons>(_frame));
@@ -123,7 +123,7 @@ std::pair<List<uint64_t>, List<uint64_t>> LoopifyListPairing::partition(
       } else {
         const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
         _stack.emplace_back(_Cont_Cons{a0});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Cont_Cons>(_frame));
@@ -286,7 +286,7 @@ List<uint64_t> LoopifyListPairing::zipWith(
           const auto &[a00, a10] =
               std::get<typename List<uint64_t>::Cons>(l2.v());
           _stack.emplace_back(_Resume_Cons{(a0 + a00)});
-          _stack.emplace_back(_Enter{a10.get(), a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a10), crane_raw(a1)});
         }
       }
     } else {
@@ -327,7 +327,7 @@ std::pair<List<uint64_t>, List<uint64_t>> LoopifyListPairing::split_even_odd(
       } else {
         const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
         _stack.emplace_back(_Cont_Cons{a0});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Cont_Cons>(_frame));

@@ -37,7 +37,7 @@ MemSafetyProbe6::build_chain(
         uint64_t rest_len = a1_value.length();
         _stack.emplace_back(_Resume_Mycons{
             [=](uint64_t n) mutable { return ((a0 + rest_len) + n); }});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Mycons>(_frame));
@@ -82,7 +82,7 @@ uint64_t MemSafetyProbe6::apply_chain(
         const auto &[a0, a1] = std::get<typename MemSafetyProbe6::mylist<
             std::function<uint64_t(uint64_t)>>::Mycons>(fns.v());
         _stack.emplace_back(_Resume_Mycons{std::move(a0)});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Mycons>(_frame));

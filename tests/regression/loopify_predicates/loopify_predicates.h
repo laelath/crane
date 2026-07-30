@@ -1,6 +1,7 @@
 #ifndef INCLUDED_LOOPIFY_PREDICATES
 #define INCLUDED_LOOPIFY_PREDICATES
 
+#include "crane_fn.h"
 #include <any>
 #include <memory>
 #include <optional>
@@ -138,7 +139,7 @@ struct LoopifyPredicates {
           const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
           if (p(a0)) {
             _stack.emplace_back(_Resume1{a0});
-            _stack.emplace_back(_Enter{a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a1)});
           } else {
             _result = List<uint64_t>::nil();
           }
@@ -242,9 +243,9 @@ struct LoopifyPredicates {
           const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
           if (p(a0)) {
             _stack.emplace_back(_Resume1{a0});
-            _stack.emplace_back(_Enter{a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a1)});
           } else {
-            _stack.emplace_back(_Enter{a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a1)});
           }
         }
       } else {
@@ -288,10 +289,10 @@ struct LoopifyPredicates {
         } else {
           const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
           if (p(a0)) {
-            _stack.emplace_back(_Enter{a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a1)});
           } else {
             _stack.emplace_back(_Resume1{a0});
-            _stack.emplace_back(_Enter{a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a1)});
           }
         }
       } else {
@@ -335,7 +336,7 @@ struct LoopifyPredicates {
         } else {
           const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
           _stack.emplace_back(_Resume_Cons{p(a0)});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       } else {
         auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -378,7 +379,7 @@ struct LoopifyPredicates {
         } else {
           const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
           _stack.emplace_back(_Resume_Cons{p(a0)});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       } else {
         auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -404,7 +405,7 @@ struct LoopifyPredicates {
           return std::make_optional<uint64_t>(_loop_idx);
         } else {
           _loop_idx = (_loop_idx + UINT64_C(1));
-          _loop_l = a1.get();
+          _loop_l = crane_raw(a1);
         }
       }
     }
@@ -452,9 +453,9 @@ struct LoopifyPredicates {
           const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
           if (p(a0)) {
             _stack.emplace_back(_Resume1{idx});
-            _stack.emplace_back(_Enter{(idx + UINT64_C(1)), a1.get()});
+            _stack.emplace_back(_Enter{(idx + UINT64_C(1)), crane_raw(a1)});
           } else {
-            _stack.emplace_back(_Enter{(idx + UINT64_C(1)), a1.get()});
+            _stack.emplace_back(_Enter{(idx + UINT64_C(1)), crane_raw(a1)});
           }
         }
       } else {
@@ -507,7 +508,7 @@ struct LoopifyPredicates {
             _result = *a1;
           } else {
             _stack.emplace_back(_Resume1{a0});
-            _stack.emplace_back(_Enter{a1.get()});
+            _stack.emplace_back(_Enter{crane_raw(a1)});
           }
         }
       } else {

@@ -125,7 +125,7 @@ uint64_t STMonadTests::nth(uint64_t n, const List<uint64_t> &l,
       } else {
         const auto &[a00, a10] =
             std::get<typename List<uint64_t>::Cons>(_loop_l->v());
-        _loop_l = a10.get();
+        _loop_l = crane_raw(a10);
         _loop_n = m;
       }
     }
@@ -232,10 +232,10 @@ List<uint64_t> STMonadTests::quicksort_ST_mine(const List<uint64_t> &xs) {
           uint64_t>
           _arg = _stack.back();
       _stack.pop_back();
-      [](std::pair<
+      [=](std::pair<
           std::pair<std::pair<std::vector<uint64_t> *, uint64_t>, uint64_t>,
           uint64_t>
-             args) {
+              args) mutable {
         const auto &[p, r] = args;
         const auto &[p0, l] = p;
         const auto &[arr0, arr_idx] = p0;
@@ -275,8 +275,8 @@ List<uint64_t> STMonadTests::quicksort_ST_mine(const List<uint64_t> &xs) {
             }();
             uint64_t storeIndex = [&]() {
               auto for_each_with_impl =
-                  [](auto &, const List<uint64_t> &xs0, uint64_t v,
-                     std::function<uint64_t(uint64_t, uint64_t)> f)
+                  [&](auto &, const List<uint64_t> &xs0, uint64_t v,
+                      std::function<uint64_t(uint64_t, uint64_t)> f)
                   -> uint64_t {
                 uint64_t _loop_v = std::move(v);
                 const List<uint64_t> *_loop_xs0 = &xs0;
@@ -289,7 +289,7 @@ List<uint64_t> STMonadTests::quicksort_ST_mine(const List<uint64_t> &xs) {
                         std::get<typename List<uint64_t>::Cons>(_loop_xs0->v());
                     uint64_t v_ = f(_loop_v, a0);
                     _loop_v = v_;
-                    _loop_xs0 = a1.get();
+                    _loop_xs0 = crane_raw(a1);
                   }
                 }
               };
@@ -392,7 +392,7 @@ std::string STMonadTests::list_to_string_helper(
       } else {
         const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
         _stack.emplace_back(_Resume_Cons{std::to_string(a0), ", "});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Cons>(_frame));

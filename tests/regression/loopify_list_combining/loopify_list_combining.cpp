@@ -33,7 +33,7 @@ List<uint64_t> LoopifyListCombining::append(
       } else {
         const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(a.v());
         _stack.emplace_back(_Resume_Cons{a0});
-        _stack.emplace_back(_Enter{std::move(b), a1.get()});
+        _stack.emplace_back(_Enter{std::move(b), crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -78,7 +78,7 @@ List<uint64_t> LoopifyListCombining::intersperse(
           _result = List<uint64_t>::cons(a0, List<uint64_t>::nil());
         } else {
           _stack.emplace_back(_Resume_Cons{a0});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       }
     } else {
@@ -127,7 +127,7 @@ List<uint64_t> LoopifyListCombining::intercalate(
           _result = std::move(a0);
         } else {
           _stack.emplace_back(_Resume_Cons{a0});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       }
     } else {
@@ -169,7 +169,7 @@ List<uint64_t> LoopifyListCombining::concat(
         const auto &[a0, a1] =
             std::get<typename List<List<uint64_t>>::Cons>(ll.v());
         _stack.emplace_back(_Resume_Cons{a0});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -214,7 +214,7 @@ List<uint64_t> LoopifyListCombining::mapcat(
         const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
         _stack.emplace_back(_Resume_Cons{List<uint64_t>::cons(
             a0, List<uint64_t>::cons(a0, List<uint64_t>::nil()))});
-        _stack.emplace_back(_Enter{a1.get()});
+        _stack.emplace_back(_Enter{crane_raw(a1)});
       }
     } else {
       auto _f = std::move(std::get<_Resume_Cons>(_frame));
@@ -312,7 +312,7 @@ List<uint64_t> LoopifyListCombining::concat_sep(
           _result = std::move(a0);
         } else {
           _stack.emplace_back(_Resume_Cons{a0});
-          _stack.emplace_back(_Enter{a1.get()});
+          _stack.emplace_back(_Enter{crane_raw(a1)});
         }
       }
     } else {
