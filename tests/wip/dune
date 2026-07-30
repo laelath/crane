@@ -101,14 +101,3 @@
   (alias runtest)
   (deps arena_tree.t.exe)
   (action (run ./arena_tree.t.exe))))
-
-(subdir list_dep_type_erasure
- (rule
-  (targets list_dep_type_erasure.t.exe)
-  (deps ListDepTypeErasure.vo list_dep_type_erasure.t.cpp (source_tree .))
-  (action
-   (run %{project_root}/scripts/compile-std.sh %{project_root} list_dep_type_erasure.t.exe list_dep_type_erasure.cpp list_dep_type_erasure.t.cpp)))
- (rule
-  (alias runtest)
-  (deps list_dep_type_erasure.t.exe)
-  (action (run ./list_dep_type_erasure.t.exe))))

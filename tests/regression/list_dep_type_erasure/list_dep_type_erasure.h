@@ -116,10 +116,10 @@ struct ListDepTypeErasure {
   };
 
   using carrier = std::any;
-  static inline const dyn d = dyn{List<T1>::cons(
-      UINT64_C(1),
-      List<T1>::cons(UINT64_C(2),
-                     List<T1>::cons(UINT64_C(3), List<T1>::nil())))};
+  static inline const dyn d = dyn{List<std::any>::cons(
+      UINT64_C(1), List<std::any>::cons(
+                       UINT64_C(2), List<std::any>::cons(
+                                        UINT64_C(3), List<std::any>::nil())))};
 
   static uint64_t dlen(const dyn &x);
 };

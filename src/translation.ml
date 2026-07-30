@@ -4385,6 +4385,20 @@ and gen_expr ?(expected_ty : cpp_type option) env (ml_e : ml_ast) : cpp_expr =
           in
           let tvars = get_current_type_vars () in
           let temps = build_template_params env tvars tys in
+          (* Normalize out-of-range [Tvar(_, None)] type args to [std::any] when
+             this constructor is nested as an argument of another constructor.
+             Such a Tvar prints as a bogus, undeclared template parameter name
+             (e.g. [List<T1>]) — it arises when a value with an erased/promoted
+             type parameter (e.g. a record's [Type]-valued field used in a
+             dependent [list <that field>] field) is built at a concrete
+             instance.  The erased struct field is [std::any], so the value must
+             be too.  Restricted to the nested-argument case so a top-level
+             constructor call with a genuine (return-only) template parameter
+             (e.g. [Trie<T1>::empty()] in a template method) is left intact. *)
+          let temps =
+            if tctx.in_ctor_arg then List.map erase_unresolved_tvars temps
+            else temps
+          in
           (* For inductives with dependent parameters (e.g. sigT where the
              second param's type references the first), the dependent type arg
              extracts as a bare reference to the same inductive as an earlier
@@ -5268,6 +5282,8 @@ and gen_expr ?(expected_ty : cpp_type option) env (ml_e : ml_ast) : cpp_expr =
             | _ -> None )
           | None -> None
         in
+        let saved_in_ctor_arg = tctx.in_ctor_arg in
+        tctx.in_ctor_arg <- true;
         let base_args =
           List.mapi
             (fun i e ->
@@ -5283,6 +5299,7 @@ and gen_expr ?(expected_ty : cpp_type option) env (ml_e : ml_ast) : cpp_expr =
                 r)
             ts
         in
+        tctx.in_ctor_arg <- saved_in_ctor_arg;
         match ty with
         | Tglob (n, _, _) ->
           let field_types = field_types_rec in
