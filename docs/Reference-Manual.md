@@ -75,7 +75,56 @@ constructor arguments, branch parameters, and the scrutinee.
 | `%scrut`          | Scrutinee in a pattern match                     |
 | `%b0a0`           | Name bound to the 0th argument of the 0th branch |
 | `%br0`, `%br1`    | The branch for the 0th, 1st, ... constructor.    |
+| `%elem`           | Element slot of a container carrying a `Boxed Element` clause (see below) |
 
+### `Boxed Element` clause
+
+Some C++ container types require a **complete** element type: they evaluate `sizeof`/`alignof` of the element at the point the container type is *named*, not merely when it is used (the immer containers behave this way). A Rocq inductive that is recursive *through* such a container — for example a `json` type with a field of type `list json` — would name the container with an incomplete element type, which does not compile. The `Boxed Element` clause lets a container mapping wrap its element in a pointer-sized indirection (a "box") **only at those recursive occurrences**, leaving every other element unwrapped.
+
+#### Syntax
+
+```coq
+Crane Extract Inductive <Rocq type> =>
+  "<C++ type using %elem>"
+  [ "<C++ term for Rocq constructor 0>" ... ]
+  "<C++ statements for pattern matching>"
+  Boxed Element "<wrapper>"
+  From "<library0>" "<library1>".
+```
+
+The clause appears after the pattern-matching block and before the `From` clause; as elsewhere, the `From` clause may be omitted.
+
+* **`"<wrapper>"`**
+  A C++ type template over `%t0` (the bare element type) that provides the indirection, e.g. `"immer::box<%t0>"`. The wrapper must be pointer-sized, copyable, and convert implicitly both to and from `%t0`, so that the constructor and pattern-matching templates are identical whether or not the element is boxed.
+
+#### The `%elem` placeholder
+
+With a `Boxed Element` clause, use `%elem` in place of `%t0` in the container's type and constructor templates wherever the stored element type appears. Crane resolves `%elem`, per element type, to:
+
+* the wrapper applied to that element (`%t0` substituted with the element type) when the element is a generated inductive that recurses through this container, and
+* the bare element type otherwise.
+
+The decision is made per element type and is global: a given `<container> T` has one and the same C++ representation everywhere it occurs. Element types that can never be recursive through the container — scalars, custom-mapped types, function types, all-nullary (`enum class`) inductives, and non-recursive structs — are never boxed.
+
+#### Example
+
+```coq
+Crane Extract Inductive list =>
+  "immer::flex_vector<%elem>"
+  [ "immer::flex_vector<%elem>{}"
+    "%a1.push_front(%a0)" ]
+  "if (%scrut.empty()) { %br0 }
+   else { const %t0& %b1a0 = %scrut.front();
+          auto %b1a1 = %scrut.drop(1); %br1 }"
+  Boxed Element "immer::box<%t0>"
+  From "immer/flex_vector.hpp" "immer/box.hpp".
+```
+
+Given `Inductive json := JList (elems : list json) | ...`, the recursive `list json` occurrence is emitted as `immer::flex_vector<immer::box<json>>`, while a non-recursive occurrence such as `list ascii` is emitted as `immer::flex_vector<char>` — unboxed.
+
+#### Interaction with recursive fields
+
+Crane normally wraps a constructor field that recurses through a container in `std::shared_ptr` (or, under `Crane Arena`, a raw region pointer) so that the field has a known size while the type is still incomplete. When the element is already boxed via a `Boxed Element` clause, that box breaks the cycle, so the outer indirection is redundant: Crane stores such a field **by value** instead. In the example above, `JList`'s field is emitted as `immer::flex_vector<immer::box<json>>` directly, not `std::shared_ptr<immer::flex_vector<immer::box<json>>>`.
 
 ---
 
@@ -468,6 +517,55 @@ Crane Reset Loopify.                         (* Reset all loopification settings
 ```coq
 Set Crane Loopify.
 Crane Extraction "my_module" MyModule.
+```
+
+---
+
+## `Set Crane Arena` / `Crane Arena`
+
+Control arena (region) allocation for recursive inductive types. In arena mode, an eligible recursive inductive's recursive fields are stored as raw pointers into a bump-allocated region instead of `std::shared_ptr`. The whole value is then destroyed in O(1) by dropping the region, with no per-node deallocation, no reference counting, and no iterative destructor.
+
+Opt-in: arena values deep-copy on value-copy (a copy allocates into a fresh region), trading cheap structural sharing for cheap allocation and destruction.
+
+### Global flag
+
+```coq
+Set Crane Arena.    (* Use arena allocation for all eligible recursive inductives *)
+Unset Crane Arena.  (* Use the default shared_ptr representation (default) *)
+```
+
+### Per-inductive control
+
+```coq
+Crane Arena <ind0> <ind1> ...     (* Force arena allocation for specific inductives *)
+Crane NoArena <ind0> <ind1> ...   (* Force the default representation for specific inductives *)
+Crane Reset Arena.                (* Clear all per-inductive arena settings *)
+```
+
+* **`<ind>`**
+  The name of a recursive inductive type.
+
+For a given inductive, a per-inductive `Crane Arena`/`Crane NoArena` setting takes precedence over the global flag (and `Crane Arena` wins over `Crane NoArena` if both are set); without a per-inductive setting, the global `Set Crane Arena` flag applies.
+
+### Eligibility
+
+Arena allocation currently applies only to plain self-recursive value types. If an inductive selected for arena mode is coinductive or mutually recursive, Crane falls back to the default `shared_ptr` representation for that type and prints a warning; the rest of the extraction is unaffected.
+
+### Generated code
+
+When any type is extracted in arena mode, Crane automatically emits `#include "arena.h"` — the Crane runtime header providing `crane::arena` and the ambient-region helpers. Allocation sites allocate into the current ambient region, which a driver installs with a `crane::arena_scope` RAII guard around the code that builds arena values.
+
+### Examples
+
+```coq
+Set Crane Arena.
+Crane Extraction "my_module" MyModule.
+```
+
+```coq
+Unset Crane Arena.
+Crane Arena tree.          (* only [tree] uses arena allocation *)
+Crane Extraction "trees" Trees.
 ```
 
 ---

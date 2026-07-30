@@ -432,6 +432,7 @@ type std_names = {
   holds_alternative : string; (* "std::holds_alternative" or "bsl::holds_alternative" *)
   get_if : string; (* "std::get_if" or "bsl::get_if" *)
   get : string; (* "std::get" or "bsl::get" *)
+  enable_from_this : string; (* enable_shared_from_this base, or crane::enable_rc_from_this *)
 }
 
 let default_std_names =
@@ -452,6 +453,7 @@ let default_std_names =
     holds_alternative = "std::holds_alternative";
     get_if = "std::get_if";
     get = "std::get";
+    enable_from_this = "std::enable_shared_from_this";
   }
 
 (** Global reference to standard library names, initialized by init_std_names. *)
@@ -468,15 +470,26 @@ let mk_std_names prefix =
       same_as = "same_as"; declval = p ^ "declval";
       convertible_to = "convertible_to";
       holds_alternative = p ^ "holds_alternative";
-      get_if = p ^ "get_if"; get = p ^ "get" }
+      get_if = p ^ "get_if"; get = p ^ "get";
+      enable_from_this = p ^ "enable_shared_from_this" }
   | _ -> default_std_names
 
 (** Initialize standard library names based on Table.std_lib() setting. *)
 let init_std_names () =
-  if Table.std_lib () = "BDE" then
-    std_names := mk_std_names "bsl::"
-  else
-    std_names := mk_std_names "std::"
+  let base =
+    if Table.std_lib () = "BDE" then mk_std_names "bsl::"
+    else mk_std_names "std::"
+  in
+  (* [Crane NonAtomicRc]: swap the recursive-field smart pointer to the
+     single-threaded, non-atomic [crane::rc] (with a matching from-this base).
+     Namespace-neutral, so it overrides both the std and BDE flavors. *)
+  std_names :=
+    if Table.non_atomic_rc () then
+      { base with
+        shared_ptr = "crane::rc";
+        make_shared = "crane::make_rc";
+        enable_from_this = "crane::enable_rc_from_this" }
+    else base
 
 (** Short accessor for current standard library names. *)
 let sn () = !std_names

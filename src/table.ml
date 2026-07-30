@@ -300,6 +300,16 @@ let needs_arena () = !needs_arena_flag
 
 let reset_needs_arena () = needs_arena_flag := false
 
+(* Set when the non-atomic reference-counted pointer (crane::rc) is used, so the
+   emitter includes the [rc.h] runtime header. *)
+let needs_rc_flag = ref false
+
+let mark_needs_rc () = needs_rc_flag := true
+
+let needs_rc () = !needs_rc_flag
+
+let reset_needs_rc () = needs_rc_flag := false
+
 (** Track whether any reified [ITree<R>] types appear in the output,
     requiring the [crane_itree.h] header. *)
 let itree_header_needed : bool ref = ref false
@@ -1557,6 +1567,29 @@ let reset_extraction_loopify () = Lib.add_leaf (reset_loopify ())
    Opt-in because it deep-copies on value-copy (see docs/arena-extraction-sketch). *)
 let {Goptions.get = arena} =
   declare_bool_option_and_ref ~key:["Crane"; "Arena"] ~value:false ()
+
+(* --- Non-atomic reference counting ----------------------------------- *)
+
+(* This option swaps the recursive-field smart pointer from [std::shared_ptr]
+   (atomic refcount) to [crane::rc] (non-atomic, single-allocation).  Sound only
+   for single-threaded extracted code, which is Crane's clone-at-boundary model.
+   Global string swap via [Cpp_state.init_std_names]; opt-in, default off. *)
+let {Goptions.get = non_atomic_rc} =
+  declare_bool_option_and_ref ~key:["Crane"; "NonAtomicRc"] ~value:false ()
+
+(* Resolved smart-pointer names for string-level codegen (kept here, in a low
+   module, so both [Cpp_state.init_std_names] and the string-building sites in
+   Translation/Gen_decls agree without a module cycle).  [Crane NonAtomicRc]
+   selects the namespace-neutral [crane::rc]; otherwise the std/BDE flavor. *)
+let shared_ptr_name () =
+  if non_atomic_rc () then "crane::rc"
+  else if std_lib () = "BDE" then "bsl::shared_ptr"
+  else "std::shared_ptr"
+
+let make_shared_name () =
+  if non_atomic_rc () then "crane::make_rc"
+  else if std_lib () = "BDE" then "bsl::make_shared"
+  else "std::make_shared"
 
 (* Per-inductive arena/noarena table. First set = force-arena, second set =
    force-noarena. *)

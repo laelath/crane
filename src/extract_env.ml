@@ -787,6 +787,16 @@ let spec_header si () =
     else
       h
   in
+  (* [crane::rc]/[crane::make_rc]/[crane::enable_rc_from_this] (the non-atomic
+     reference-counted pointer selected by [Crane NonAtomicRc]) live in rc.h. *)
+  let h =
+    if Table.non_atomic_rc ()
+       && not (List.exists (fun s -> String.equal s "rc.h") (himports @ imps))
+    then
+      h ++ mk_include_quoted "rc.h" ++ fnl ()
+    else
+      h
+  in
   let fun_concept =
     if is_bde () then
       "template <class From, class To>\n\

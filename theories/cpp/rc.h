@@ -19,6 +19,7 @@ namespace crane {
 // Forward declarations
 template <typename T> class rc;
 template <typename T> class weak;
+template <typename T> class enable_rc_from_this;
 
 template <typename T>
 struct ControlBlock {
@@ -45,6 +46,10 @@ public:
     using element_type = T;
 
     rc() noexcept = default; // null rc
+
+    // Null rc from [nullptr] (non-explicit), so generated code like
+    // [cond ? make_rc<T>(...) : nullptr] type-checks, matching std::shared_ptr.
+    rc(std::nullptr_t) noexcept {}
 
     rc(const rc& other) noexcept : ctrl_(other.ctrl_) { inc_strong(); }
     rc(rc&& other) noexcept : ctrl_(other.ctrl_) { other.ctrl_ = nullptr; }
@@ -84,6 +89,7 @@ private:
     template <typename U, typename... Args>
     friend rc<U> make_rc(Args&&... args);
     friend class weak<T>;
+    template <typename U> friend class enable_rc_from_this;
 
     explicit rc(ControlBlock<T>* ctrl) noexcept : ctrl_(ctrl) {}
 
@@ -158,6 +164,32 @@ private:
 template <typename T>
 weak<T> rc<T>::downgrade() const noexcept { return weak<T>(ctrl_); }
 
+// enable_rc_from_this<T> — analogue of std::enable_shared_from_this for rc<T>.
+// A type T that derives from enable_rc_from_this<T> gains rc_from_this(), which
+// returns an owning rc<T> to itself. Instead of storing a self-weak (which would
+// be destroyed *during* ~T and, with this single-block scheme, free the control
+// block mid-destruction), it recovers the control block from the object's own
+// address. Valid only for objects created via make_rc<T> — which is exactly how
+// Crane-extracted recursive values are always allocated.
+template <typename T>
+class enable_rc_from_this {
+protected:
+    enable_rc_from_this() noexcept                                  = default;
+    enable_rc_from_this(const enable_rc_from_this&) noexcept        = default;
+    enable_rc_from_this& operator=(const enable_rc_from_this&) noexcept = default;
+    ~enable_rc_from_this()                                          = default;
+
+public:
+    rc<T> rc_from_this() const noexcept {
+        T* self = const_cast<T*>(static_cast<const T*>(this));
+        auto* ctrl = reinterpret_cast<ControlBlock<T>*>(
+            reinterpret_cast<unsigned char*>(self)
+            - offsetof(ControlBlock<T>, storage));
+        ++ctrl->strong;
+        return rc<T>(ctrl);
+    }
+};
+
 // make_rc implementation (single allocation: one new for control + T)
 
 template <typename T, typename... Args>
@@ -174,6 +206,14 @@ rc<T> make_rc(Args&&... args) {
 }
 
 } // namespace crane
+
+// Overload of [crane_raw] (declared in crane_fn.h for std::shared_ptr<T> / T*)
+// for the non-atomic [crane::rc<T>]: extract the raw pointer. Kept here so it is
+// available whenever rc<T> is in use (with or without crane_fn.h included), so
+// loopify's raw-pointer extraction works uniformly across pointer flavors.
+template <typename T> T *crane_raw(const crane::rc<T> &p) noexcept {
+  return p.get();
+}
 
 /*
 Usage example:

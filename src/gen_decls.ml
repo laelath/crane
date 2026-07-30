@@ -3836,13 +3836,13 @@ let ml_type_has_nested_self_ref ~ind_ref ml_ty =
     List.exists has_self_ref args
   | _ -> false
 
-(** Completeness-aware element wrapping (WRAP.md): if a constructor field of
-    [ind_ref] recurses THROUGH a boxed-element container (a container carrying a
-    [Boxed Element] wrapper, e.g. [list <self>] where [list -> immer::flex_vector]),
-    record [ind_ref] as an inductive that must be boxed as a container element
-    everywhere it occurs, so its C++ representation is type-consistent. Call this
-    for every constructor field type. *)
-let maybe_record_boxed_recursive_ind ~ind_ref ml_ty =
+(** Does [ml_ty] recurse into [ind_ref] specifically THROUGH a boxed-element
+    container (a container carrying a [Boxed Element] wrapper, e.g. [list <self>]
+    mapped to [immer::flex_vector<immer::box<self>>])?  When it does, the element
+    box already breaks the completeness cycle, so the outer field-level
+    [shared_ptr]/arena-pointer indirection is redundant and the field can be
+    stored by value. *)
+let ml_type_recurses_through_boxed_container ~ind_ref ml_ty =
   let rec find_boxed_rec t =
     match t with
     | Miniml.Tglob (g, args, _) ->
@@ -3853,7 +3853,17 @@ let maybe_record_boxed_recursive_ind ~ind_ref ml_ty =
     | Miniml.Tmeta {contents = Some t'} -> find_boxed_rec t'
     | _ -> false
   in
-  if find_boxed_rec ml_ty then Table.add_boxed_recursive_ind ind_ref
+  find_boxed_rec ml_ty
+
+(** Completeness-aware element wrapping (WRAP.md): if a constructor field of
+    [ind_ref] recurses THROUGH a boxed-element container (a container carrying a
+    [Boxed Element] wrapper, e.g. [list <self>] where [list -> immer::flex_vector]),
+    record [ind_ref] as an inductive that must be boxed as a container element
+    everywhere it occurs, so its C++ representation is type-consistent. Call this
+    for every constructor field type. *)
+let maybe_record_boxed_recursive_ind ~ind_ref ml_ty =
+  if ml_type_recurses_through_boxed_container ~ind_ref ml_ty then
+    Table.add_boxed_recursive_ind ind_ref
 
 (** Check whether the self/mutual reference inside [ml_ty] is uniform
     (i.e. its type arguments are exactly the parent's type parameters
@@ -4130,7 +4140,14 @@ let gen_ind_header_v2
                              vars
                              ty
                          in
-                         if is_coinductive then Tshared_ptr bare_cpp_ty
+                         (* If the field recurses THROUGH a boxed-element
+                            container, the element box already breaks the
+                            completeness cycle, so the outer shared_ptr/arena
+                            pointer is redundant: store the container by value. *)
+                         if (not is_coinductive)
+                            && ml_type_recurses_through_boxed_container
+                                 ~ind_ref:name ty
+                         then bare_cpp_ty
                          else Tshared_ptr bare_cpp_ty
                        else cpp_ty
                      in
@@ -4375,7 +4392,7 @@ let gen_ind_header_v2
                         CPPvar _stack_id,
                         Id.of_string "push_back",
                         [CPPraw (
-                           "std::make_shared<" ^ ss
+                           Table.make_shared_name () ^ "<" ^ ss
                            ^ ">(std::move(_elem))")]));
                       Sraw "}";
                       Sraw (fes ^ ".reset();") ])]
@@ -4409,7 +4426,7 @@ let gen_ind_header_v2
                             CPPvar _stack_id,
                             Id.of_string "push_back",
                             [CPPraw (
-                               "std::make_shared<" ^ ss
+                               Table.make_shared_name () ^ "<" ^ ss
                                ^ ">(std::move(_lc." ^ elem_field ^ "))")]));
                           Sraw (
                             "if (_lc." ^ tail_field ^ ") {"
@@ -4676,7 +4693,11 @@ let gen_ind_header_v2
                   (* Use bare (no-ns) type so factory param and storage are
                      consistent: shared_ptr<optional<chain>> not
                      shared_ptr<optional<shared_ptr<chain>>>. *)
-                  if is_coinductive then Tshared_ptr api_ty
+                  (* Boxed-element container recursion: store by value (the box
+                     is the indirection); no outer shared_ptr/arena pointer. *)
+                  if (not is_coinductive)
+                     && ml_type_recurses_through_boxed_container ~ind_ref:name ty
+                  then api_ty
                   else Tshared_ptr api_ty
                 else storage_ty
               in
@@ -4932,7 +4953,11 @@ let gen_ind_header_v2
                         in
                         maybe_record_boxed_recursive_ind ~ind_ref:name ty;
                         if ml_type_has_nested_self_ref ~ind_ref:name ty then
-                          if is_coinductive then Tshared_ptr bare_ty
+                          (* Boxed-element container recursion: by value. *)
+                          if (not is_coinductive)
+                             && ml_type_recurses_through_boxed_container
+                                  ~ind_ref:name ty
+                          then bare_ty
                           else Tshared_ptr bare_ty
                         else storage_ty
                       in

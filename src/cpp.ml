@@ -1103,7 +1103,7 @@ let rec pp_structure_elem ~is_header f = function
                     ++ str ">"
                   | _ -> mt ()
                 in
-                str " : public std::enable_shared_from_this<"
+                str " : public " ++ str (sn ()).enable_from_this ++ str "<"
                 ++ name
                 ++ type_args
                 ++ str ">"

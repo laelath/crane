@@ -521,7 +521,7 @@ let rec render_cpp_type_simple ?(raw_inductives = Refset'.empty)
     ( match resolve_special_id s with Some r -> r | None -> s )
   | Tqualified (base, id) ->
     "typename " ^ render base ^ "::" ^ Id.to_string id
-  | Tshared_ptr t -> "std::shared_ptr<" ^ render t ^ ">"
+  | Tshared_ptr t -> Table.shared_ptr_name () ^ "<" ^ render t ^ ">"
   | Tvoid -> "void"
   | _ -> "auto"
 
@@ -1017,7 +1017,7 @@ let rec gen_type_conversion_expr ?(skip = fun _ -> false) ~src_ty ~dst_ty expr =
       | _, Tshared_ptr inner ->
         (* T → shared_ptr<T>: wrap with make_shared *)
         require_header "memory";
-        "std::make_shared<" ^ render inner ^ ">(" ^ binding ^ ")"
+        Table.make_shared_name () ^ "<" ^ render inner ^ ">(" ^ binding ^ ")"
       | Tshared_ptr _, _ ->
         (* shared_ptr<T> → T: dereference *)
         "(*" ^ binding ^ ")"
@@ -1126,6 +1126,14 @@ let rec gen_type_conversion_expr ?(skip = fun _ -> false) ~src_ty ~dst_ty expr =
   else
     (* ---- Different types: dispatch on wrapper structure ---- *)
     match (src_ty, dst_ty) with
+    | Tshared_ptr src_inner, Tshared_ptr dst_inner
+      when strip_ns src_inner = strip_ns dst_inner ->
+      (* shared_ptr<S> → shared_ptr<T> where the pointee types are identical
+         (they differ only in a [Tnamespace] rendering wrapper).  The pointer is
+         already the right type, and the pointee is immutable, so forward the
+         existing pointer (a refcount bump / move) instead of dereferencing and
+         re-[make_shared]ing a fresh, independent copy of the whole node. *)
+      expr
     | Tshared_ptr _src_inner, Tshared_ptr dst_inner ->
       (* shared_ptr<S> → shared_ptr<T>: null-check + dereference inner *)
       require_header "memory";
@@ -1133,7 +1141,8 @@ let rec gen_type_conversion_expr ?(skip = fun _ -> false) ~src_ty ~dst_ty expr =
       let ty_s = render dst_ty in
       with_expr_s ~lambda_ty:ty_s
         ~make_body:(fun s ->
-          s ^ " ? std::make_shared<" ^ dst_inner_s ^ ">(*" ^ s ^ ") : nullptr")
+          s ^ " ? " ^ Table.make_shared_name () ^ "<" ^ dst_inner_s
+          ^ ">(*" ^ s ^ ") : nullptr")
     | Tshared_ptr inner, _ ->
       (* shared_ptr<T> → T: dereference.  Also strip Tnamespace from inner
          before comparing to dst_ty: strip_ns was applied to dst_ty at the
@@ -4053,7 +4062,8 @@ and gen_expr ?(expected_ty : cpp_type option) env (ml_e : ml_ast) : cpp_expr =
                     ^ "<"
                     ^ String.concat ", " (List.map render_ty tys)
                     ^ ">"
-                  | Tshared_ptr ty -> "std::shared_ptr<" ^ render_ty ty ^ ">"
+                  | Tshared_ptr ty ->
+                    Table.shared_ptr_name () ^ "<" ^ render_ty ty ^ ">"
                   | _ -> "auto"
                 in
                 "<" ^ String.concat ", " (List.map render_ty tys_cpp) ^ ">"
@@ -7073,8 +7083,30 @@ and gen_match_branch env (typ : ml_type) rty cname ids dummies body sname
       List.exists ml_has_self_ref args
     | _ -> false
   in
+  (* A field recurses THROUGH a boxed-element container (e.g. [list <self>] ->
+     [immer::flex_vector<immer::box<self>>]) when the container carries a
+     [Boxed Element] wrapper and a self/mutual ref appears in its type args.
+     The element box breaks the completeness cycle, so such a field is stored by
+     VALUE (matching gen_decls) — it is not shared_ptr-wrapped and must not be
+     dereferenced when bound in a match arm. *)
+  let rec ml_recurses_through_boxed = function
+    | Miniml.Tglob (g, args, _) ->
+      ( match Table.find_boxed_wrapper_opt g with
+      | Some _ when List.exists ml_has_self_ref args -> true
+      | _ -> List.exists ml_recurses_through_boxed args )
+    | Miniml.Tmeta {contents = Some t'} -> ml_recurses_through_boxed t'
+    | Miniml.Tarr (a, b) ->
+      ml_recurses_through_boxed a || ml_recurses_through_boxed b
+    | _ -> false
+  in
+  let field_recurses_through_boxed_at_def i =
+    match List.nth_opt non_erased_def_site_field_tys i with
+    | Some ty -> ml_recurses_through_boxed ty
+    | None -> false
+  in
   let field_is_uptr i =
     not (Table.is_coinductive ind_ref)
+    && not (field_recurses_through_boxed_at_def i)
     && (field_is_self_or_mutual_ref_at_def i
         || field_has_nested_self_ref_at_def i)
   in
@@ -7197,6 +7229,7 @@ and gen_match_branch env (typ : ml_type) rty cname ids dummies body sname
           ( field_is_self_or_mutual_ref_at_def i
             || field_has_nested_self_ref_at_def i )
           && not (Table.is_coinductive ind_ref)
+          && not (field_recurses_through_boxed_at_def i)
           && is_uniform_self_ref_at_def i
         in
         let field_cpp_ty =
@@ -7209,6 +7242,11 @@ and gen_match_branch env (typ : ml_type) rty cname ids dummies body sname
                there is no element-wise converter from List<shared_ptr<T>> to
                List<T>, so we must keep elements as bare values. *)
             Tshared_ptr bare_field_cpp_ty
+          else if field_recurses_through_boxed_at_def i then
+            (* Boxed-element container field: stored by value as
+               flex_vector<box<self>> (matches the struct field decl); the box
+               provides the indirection, so no shared_ptr and no deref. *)
+            bare_field_cpp_ty
           else
             (* Use storage_field_cpp_ty but correct false-positive shared_ptr
                wrapping: when storage wraps with shared_ptr but the def-site

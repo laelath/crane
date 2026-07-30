@@ -262,6 +262,15 @@ val needs_arena : unit -> bool
 (** Reset the arena-needed flag. *)
 val reset_needs_arena : unit -> unit
 
+(** Mark that the [rc.h] runtime header is needed (non-atomic rc codegen). *)
+val mark_needs_rc : unit -> unit
+
+(** Check whether the [rc.h] runtime header is needed. *)
+val needs_rc : unit -> bool
+
+(** Reset the rc-needed flag. *)
+val reset_needs_rc : unit -> unit
+
 (** Mark that [crane_itree.h] is needed (reified ITree types in output). *)
 val require_itree_header : unit -> unit
 
@@ -579,6 +588,15 @@ val arena : unit -> bool
 (** Check whether a specific inductive should use arena allocation (per-inductive
     override first, then global [Crane Arena] setting). *)
 val should_arena : GlobRef.t -> bool
+
+(** Check if non-atomic reference counting ([crane::rc]) is enabled, swapping
+    [std::shared_ptr]/[std::make_shared] for [crane::rc]/[crane::make_rc]. *)
+val non_atomic_rc : unit -> bool
+
+(** Resolved smart-pointer type/factory names for string-level codegen, honoring
+    [Crane NonAtomicRc] and the std/BDE flavor. *)
+val shared_ptr_name : unit -> string
+val make_shared_name : unit -> string
 
 (** Mark inductive types for arena (true) or non-arena (false) extraction.
     @param b [true] to force arena allocation for the listed inductives,

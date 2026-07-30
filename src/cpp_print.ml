@@ -1936,9 +1936,15 @@ and pp_cpp_expr env args t =
     ++ str ")"
   | CPPthis -> str "this"
   | CPPshared_from_this ty ->
-    str "std::const_pointer_cast<"
-    ++ pp_cpp_type false [] ty
-    ++ str ">(this->shared_from_this())"
+    (* [crane::rc] returns a mutable [rc<T>] from [rc_from_this()], so no
+       const_pointer_cast is needed; [std::shared_ptr] needs the cast to strip
+       the const that [shared_from_this()] adds in const methods. *)
+    if String.equal (sn ()).shared_ptr "crane::rc" then
+      str "this->rc_from_this()"
+    else
+      str "std::const_pointer_cast<"
+      ++ pp_cpp_type false [] ty
+      ++ str ">(this->shared_from_this())"
   | CPPmember (e, id) ->
     (* Rewrite std::move(x).field → std::move(x.field): access the field
        first, then move its value.  This is semantically equivalent and:
@@ -3644,7 +3650,7 @@ and pp_cpp_decl_raw env = function
       in
       let inherit_clause =
         if sft then
-          str " : public std::enable_shared_from_this<"
+          str " : public " ++ str (sn ()).enable_from_this ++ str "<"
           ++ struct_name
           ++ str ">"
         else
@@ -3913,12 +3919,12 @@ and pp_cpp_decl_raw env = function
           tparams
         with
         | [] ->
-          str " : public std::enable_shared_from_this<"
+          str " : public " ++ str (sn ()).enable_from_this ++ str "<"
           ++ struct_name
           ++ str ">"
         | _ ->
           let type_args = pp_list (fun (_, tid) -> Id.print tid) tparams in
-          str " : public std::enable_shared_from_this<"
+          str " : public " ++ str (sn ()).enable_from_this ++ str "<"
           ++ struct_name
           ++ str "<"
           ++ type_args
