@@ -201,9 +201,24 @@ struct crane_is_boxlike : std::false_type {};
 template <class T>
 struct crane_is_boxlike<
     T, std::void_t<typename T::value_type,
-                   decltype(std::declval<const T &>().get())>>
-    : std::bool_constant<
-          std::is_constructible_v<T, typename T::value_type>> {};
+                   decltype(std::declval<const T &>().get())>> {
+  using U = typename T::value_type;
+  static constexpr bool value = std::is_constructible_v<T, U>;
+  // A `Boxed Element` wrapper (e.g. immer::box<U>) must convert implicitly
+  // both ways -- constructible from U, and convertible back via .get() (or
+  // an equivalent `operator const U&()`) -- because Crane's cons/match
+  // codegen for boxed elements relies on these conversions happening
+  // implicitly rather than emitting explicit wrap/unwrap calls (see
+  // ~/crane/WRAP.md section 2.1). A wrapper satisfying `value_type`+`.get()`
+  // but failing either direction is misconfigured; fail loudly here instead
+  // of producing a confusing error downstream.
+  static_assert(
+      value &&
+          std::is_convertible_v<decltype(std::declval<const T &>().get()), U>,
+      "Crane Boxed Element wrapper must convert implicitly both ways to/from "
+      "its bare element type: constructible from the element, and its "
+      ".get() must convert to the element type.");
+};
 
 template <class Dst, class Src> Dst crane_container_cast(Src &&src) {
   using Elt = typename Dst::value_type;
