@@ -59,6 +59,17 @@
   (deps any_cast_nested.t.exe)
   (action (run ./any_cast_nested.t.exe))))
 
+(subdir erased_list_cons
+ (rule
+  (targets erased_list_cons.t.exe)
+  (deps ErasedListCons.vo erased_list_cons.t.cpp (source_tree .))
+  (action
+   (run %{project_root}/scripts/compile-std.sh %{project_root} erased_list_cons.t.exe erased_list_cons.cpp erased_list_cons.t.cpp)))
+ (rule
+  (alias runtest)
+  (deps erased_list_cons.t.exe)
+  (action (run ./erased_list_cons.t.exe))))
+
 (subdir any_cast_nested_pair
  (rule
   (targets any_cast_nested_pair.t.exe)

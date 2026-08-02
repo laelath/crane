@@ -3472,8 +3472,18 @@ and gen_expr ?(expected_ty : cpp_type option) env (ml_e : ml_ast) : cpp_expr =
              the concrete-element container (a constructor field via
              [crane_container_cast], or [eta_fun]'s function-argument path)
              converts it.  Scalar targets keep the direct concrete [any_cast]. *)
-          (match ty with
-           | Tglob (g, _ :: _, _) when is_list_global g ->
+          (* Does [ty] denote a list container, possibly under a [Tnamespace]
+             wrapper?  (A namespaced list — e.g. a functor-qualified
+             [Datatypes::List] — must be recognized too, otherwise the fallback
+             below emits the target verbatim and leaks an abstract/unresolved
+             element type variable, e.g. [any_cast<List<T1>>], inside an erased
+             [crane_erase_fn] body which is not a template context.) *)
+          let rec ty_is_list = function
+            | Tnamespace (_, t) -> ty_is_list t
+            | Tglob (g, _ :: _, _) -> is_list_global g
+            | _ -> false
+          in
+          if ty_is_list ty then
              (* Canonical erased shape is [deque<std::any>] -- every element
                 boxed as a single [std::any] (see [gen_expr_custom_cons]'s
                 hollow-container collapse for the producer side of this same
@@ -3487,13 +3497,13 @@ and gen_expr ?(expected_ty : cpp_type option) env (ml_e : ml_ast) : cpp_expr =
                 [crane_any_cast] can recover it, which is redundant with (and,
                 if the destination shape or printer state ever disagrees,
                 incompatible with) the direct-[std::any]-per-element path. *)
-             let erased_ty =
-               match ty with
+             let rec erase_list_elems = function
+               | Tnamespace (ns_g, t) -> Tnamespace (ns_g, erase_list_elems t)
                | Tglob (g, args, ns) -> Tglob (g, List.map (fun _ -> Tany) args, ns)
                | t -> t
              in
-             CPPany_cast (erased_ty, result)
-           | _ -> CPPany_cast (ty, result))
+             CPPany_cast (erase_list_elems ty, result)
+           else CPPany_cast (ty, result)
       | _ -> result
     end
     else result
