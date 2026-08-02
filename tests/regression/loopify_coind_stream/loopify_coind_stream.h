@@ -151,47 +151,27 @@ struct LoopifyCoindStream {
     return stream<T1>::lazy_([=]() mutable -> stream<T1> { return *a1; });
   }
 
-  template <typename T1>
-  static List<T1> take(uint64_t n,
-                       stream<T1> s) { /// _Enter: captures varying parameters
-                                       /// for each recursive call.
-
-    struct _Enter {
-      stream<T1> s;
-      uint64_t n;
-    };
-
-    /// _Resume_n_: saves [s], resumes after recursive call with _result.
-    struct _Resume_n_ {
-      std::decay_t<decltype(hd<T1>(std::declval<stream<T1> &>()))> s;
-    };
-
-    using _Frame = std::variant<_Enter, _Resume_n_>;
-    List<T1> _result{};
-    std::vector<_Frame> _stack;
-    _stack.reserve(8);
-    _stack.emplace_back(_Enter{std::move(s), n});
-    /// Loopified take: _Enter -> _Resume_n_.
-    while (!_stack.empty()) {
-      _Frame _frame = std::move(_stack.back());
-      _stack.pop_back();
-      if (std::holds_alternative<_Enter>(_frame)) {
-        auto _f = std::move(std::get<_Enter>(_frame));
-        stream<T1> s = std::move(_f.s);
-        uint64_t n = _f.n;
-        if (n <= 0) {
-          _result = List<T1>::nil();
-        } else {
-          uint64_t n_ = n - 1;
-          _stack.emplace_back(_Resume_n_{hd<T1>(s)});
-          _stack.emplace_back(_Enter{tl<T1>(s), n_});
-        }
+  template <typename T1> static List<T1> take(uint64_t n, stream<T1> s) {
+    std::shared_ptr<List<T1>> _head{};
+    std::shared_ptr<List<T1>> *_write = &_head;
+    stream<T1> _loop_s = std::move(s);
+    uint64_t _loop_n = std::move(n);
+    while (true) {
+      if (_loop_n <= 0) {
+        *_write = std::make_shared<List<T1>>(List<T1>::nil());
+        break;
       } else {
-        auto _f = std::move(std::get<_Resume_n_>(_frame));
-        _result = List<T1>::cons(_f.s, std::move(_result));
+        uint64_t n_ = _loop_n - 1;
+        auto _cell = std::make_shared<List<T1>>(
+            typename List<T1>::Cons(hd<T1>(_loop_s), nullptr));
+        *_write = std::move(_cell);
+        _write = &std::get<typename List<T1>::Cons>((*_write)->v_mut()).l;
+        _loop_s = tl<T1>(_loop_s);
+        _loop_n = n_;
+        continue;
       }
     }
-    return _result;
+    return std::move(*_head);
   }
 
   template <typename T1, typename F0>

@@ -438,100 +438,66 @@ struct LoopifyStructures {
   /// map_opt f l maps option-returning function and filters out Nones.
   template <typename F0>
     requires std::is_invocable_r_v<std::optional<uint64_t>, F0 &, uint64_t &>
-  static List<uint64_t>
-  map_opt(F0 &&f,
-          const List<uint64_t> &l) { /// _Enter: captures varying parameters for
-                                     /// each recursive call.
-
-    struct _Enter {
-      const List<uint64_t> *l;
-    };
-
-    /// _Resume_y: saves [y], resumes after recursive call with _result.
-    struct _Resume_y {
-      uint64_t y;
-    };
-
-    using _Frame = std::variant<_Enter, _Resume_y>;
-    List<uint64_t> _result{};
-    std::vector<_Frame> _stack;
-    _stack.reserve(8);
-    _stack.emplace_back(_Enter{&l});
-    /// Loopified map_opt: _Enter -> _Resume_y.
-    while (!_stack.empty()) {
-      _Frame _frame = std::move(_stack.back());
-      _stack.pop_back();
-      if (std::holds_alternative<_Enter>(_frame)) {
-        auto _f = std::move(std::get<_Enter>(_frame));
-        const List<uint64_t> &l = *_f.l;
-        if (std::holds_alternative<typename List<uint64_t>::Nil>(l.v())) {
-          _result = List<uint64_t>::nil();
-        } else {
-          const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
-          auto _cs = f(a0);
-          if (_cs.has_value()) {
-            const uint64_t &y = *_cs;
-            _stack.emplace_back(_Resume_y{y});
-            _stack.emplace_back(_Enter{crane_raw(a1)});
-          } else {
-            _stack.emplace_back(_Enter{crane_raw(a1)});
-          }
-        }
+  static List<uint64_t> map_opt(F0 &&f, const List<uint64_t> &l) {
+    std::shared_ptr<List<uint64_t>> _head{};
+    std::shared_ptr<List<uint64_t>> *_write = &_head;
+    const List<uint64_t> *_loop_l = &l;
+    while (true) {
+      if (std::holds_alternative<typename List<uint64_t>::Nil>(_loop_l->v())) {
+        *_write = std::make_shared<List<uint64_t>>(List<uint64_t>::nil());
+        break;
       } else {
-        auto _f = std::move(std::get<_Resume_y>(_frame));
-        _result = List<uint64_t>::cons(_f.y, std::move(_result));
+        const auto &[a0, a1] =
+            std::get<typename List<uint64_t>::Cons>(_loop_l->v());
+        auto _cs = f(a0);
+        if (_cs.has_value()) {
+          const uint64_t &y = *_cs;
+          auto _cell = std::make_shared<List<uint64_t>>(
+              typename List<uint64_t>::Cons(y, nullptr));
+          *_write = std::move(_cell);
+          _write =
+              &std::get<typename List<uint64_t>::Cons>((*_write)->v_mut()).l;
+          _loop_l = crane_raw(a1);
+          continue;
+        } else {
+          _loop_l = crane_raw(a1);
+          continue;
+        }
       }
     }
-    return _result;
+    return std::move(*_head);
   }
 
   /// filter_map p f l filters and maps in one pass.
   template <typename F0, typename F1>
     requires std::is_invocable_r_v<bool, F0 &, uint64_t &> &&
              std::is_invocable_r_v<uint64_t, F1 &, uint64_t &>
-  static List<uint64_t>
-  filter_map(F0 &&p, F1 &&f,
-             const List<uint64_t> &l) { /// _Enter: captures varying parameters
-                                        /// for each recursive call.
-
-    struct _Enter {
-      const List<uint64_t> *l;
-    };
-
-    /// _Resume1: saves [a0], resumes after recursive call with _result.
-    struct _Resume1 {
-      uint64_t a0;
-    };
-
-    using _Frame = std::variant<_Enter, _Resume1>;
-    List<uint64_t> _result{};
-    std::vector<_Frame> _stack;
-    _stack.reserve(8);
-    _stack.emplace_back(_Enter{&l});
-    /// Loopified filter_map: _Enter -> _Resume1.
-    while (!_stack.empty()) {
-      _Frame _frame = std::move(_stack.back());
-      _stack.pop_back();
-      if (std::holds_alternative<_Enter>(_frame)) {
-        auto _f = std::move(std::get<_Enter>(_frame));
-        const List<uint64_t> &l = *_f.l;
-        if (std::holds_alternative<typename List<uint64_t>::Nil>(l.v())) {
-          _result = List<uint64_t>::nil();
-        } else {
-          const auto &[a0, a1] = std::get<typename List<uint64_t>::Cons>(l.v());
-          if (p(a0)) {
-            _stack.emplace_back(_Resume1{f(a0)});
-            _stack.emplace_back(_Enter{crane_raw(a1)});
-          } else {
-            _stack.emplace_back(_Enter{crane_raw(a1)});
-          }
-        }
+  static List<uint64_t> filter_map(F0 &&p, F1 &&f, const List<uint64_t> &l) {
+    std::shared_ptr<List<uint64_t>> _head{};
+    std::shared_ptr<List<uint64_t>> *_write = &_head;
+    const List<uint64_t> *_loop_l = &l;
+    while (true) {
+      if (std::holds_alternative<typename List<uint64_t>::Nil>(_loop_l->v())) {
+        *_write = std::make_shared<List<uint64_t>>(List<uint64_t>::nil());
+        break;
       } else {
-        auto _f = std::move(std::get<_Resume1>(_frame));
-        _result = List<uint64_t>::cons(_f.a0, std::move(_result));
+        const auto &[a0, a1] =
+            std::get<typename List<uint64_t>::Cons>(_loop_l->v());
+        if (p(a0)) {
+          auto _cell = std::make_shared<List<uint64_t>>(
+              typename List<uint64_t>::Cons(f(a0), nullptr));
+          *_write = std::move(_cell);
+          _write =
+              &std::get<typename List<uint64_t>::Cons>((*_write)->v_mut()).l;
+          _loop_l = crane_raw(a1);
+          continue;
+        } else {
+          _loop_l = crane_raw(a1);
+          continue;
+        }
       }
     }
-    return _result;
+    return std::move(*_head);
   }
 
   /// find_first_some l finds first Some value in list of options.

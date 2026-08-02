@@ -2412,17 +2412,25 @@ let is_ctor_factory_call = function
   | CPPfun_call (CPPqualified (type_expr, factory_id), args) ->
     let factory_s = Id.to_string factory_id in
     let n = String.length factory_s in
+    (* Strip trailing underscore (collision escape) before capitalizing *)
+    let base =
+      if n > 0 && factory_s.[n - 1] = '_' then
+        String.sub factory_s 0 (n - 1)
+      else factory_s
+    in
+    let struct_name = String.capitalize_ascii base in
+    (* A genuine TMC-wrapping data constructor always has a recursive
+       (shared_ptr) field — the hole the recursion writes into — so it is
+       recorded in [ctor_ptr_fields].  A qualified call whose "constructor" is
+       NOT registered there is not a data constructor at all (e.g. a record's
+       function-typed field applied as [M::m_op(x, rec)] on the abstract record
+       type); TMC-decomposing it would fabricate a nonexistent variant cell with
+       a [nullptr] hole.  Requiring registration rejects those. *)
     (* Skip built-in accessors and other non-factory qualified calls *)
     if factory_s = "v" || factory_s = "v_mut" || factory_s = "lazy_"
+       || not (Hashtbl.mem ctor_ptr_fields struct_name)
     then None
     else
-      (* Strip trailing underscore (collision escape) before capitalizing *)
-      let base =
-        if n > 0 && factory_s.[n - 1] = '_' then
-          String.sub factory_s 0 (n - 1)
-        else factory_s
-      in
-      let struct_name = String.capitalize_ascii base in
       Some (type_expr, struct_name, factory_s, args)
   | _ -> None
 
@@ -2457,8 +2465,15 @@ let rec try_tmc_decompose check expr =
     in
     let make_cell idx =
       let uptr_idxs =
+        (* [ctor_ptr_fields] records shared_ptr field positions in STRUCT-field
+           order, but [idx]/[tca_non_rec_args] here index into [args] from
+           [is_ctor_factory_call], which are stored REVERSED (as [CPPfun_call]
+           keeps them).  Map the struct-order positions into the same reversed
+           arg-space ([n_args - 1 - j]) so [build_cell_call]'s
+           [List.mem i tca_uptr_field_idxs] test aligns — otherwise a non-pointer
+           field (e.g. a [cons] element) is spuriously [make_shared]-wrapped. *)
         match Hashtbl.find_opt ctor_ptr_fields ctor_name with
-        | Some idxs -> idxs
+        | Some idxs -> List.map (fun j -> n_args - 1 - j) idxs
         | None -> [idx]
       in
       {
@@ -7284,7 +7299,7 @@ let apply_nontail_loopification ?(param_inits = []) ?fn_name check pp_type pp_ex
   if has_recursive_branch_dependency check body then
     (body, false)
   else
-  match (None : tmc_info option) with
+  match try_tmc_classify check body with
   | Some ti ->
     (transform_tmc ~param_inits check pp_expr ti params ret_ty body, true)
   | None ->

@@ -1,6 +1,7 @@
 #ifndef INCLUDED_COMPREHENSIVE_PATTERNS
 #define INCLUDED_COMPREHENSIVE_PATTERNS
 
+#include "crane_fn.h"
 #include <any>
 #include <functional>
 #include <memory>

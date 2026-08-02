@@ -3,6 +3,7 @@
 
 #include "crane_fn.h"
 #include <concepts>
+#include <memory>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -31,62 +32,52 @@ template <HasKey K> struct Collector {
       const typename Datatypes::template List<std::pair<
           typename K::key, typename Datatypes::template List<typename K::key>>>
           &ps,
-      typename K::key
-          x) { /// _Enter: captures varying parameters for each recursive call.
-
-    struct _Enter {
-      const typename Datatypes::template List<std::pair<
-          typename K::key, typename Datatypes::template List<typename K::key>>>
-          *ps;
-    };
-
-    /// _Resume1: saves [gamma], resumes after recursive call with _result.
-    struct _Resume1 {
-      typename Datatypes::template List<typename K::key> gamma;
-    };
-
-    using _Frame = std::variant<_Enter, _Resume1>;
-    typename Datatypes::template List<
-        typename Datatypes::template List<typename K::key>>
-        _result{};
-    std::vector<_Frame> _stack;
-    _stack.reserve(8);
-    _stack.emplace_back(_Enter{&ps});
-    /// Loopified rhss_for: _Enter -> _Resume1.
-    while (!_stack.empty()) {
-      _Frame _frame = std::move(_stack.back());
-      _stack.pop_back();
-      if (std::holds_alternative<_Enter>(_frame)) {
-        auto _f = std::move(std::get<_Enter>(_frame));
-        const typename Datatypes::template List<
-            std::pair<typename K::key,
-                      typename Datatypes::template List<typename K::key>>> &ps =
-            *_f.ps;
-        if (std::holds_alternative<typename Datatypes::template List<std::pair<
-                typename K::key,
-                typename Datatypes::template List<typename K::key>>>::Nil>(
-                ps.v())) {
-          _result = Datatypes::template List<
-              typename Datatypes::template List<typename K::key>>::nil();
-        } else {
-          const auto &[a0, a1] = std::get<typename Datatypes::template List<
-              std::pair<typename K::key, typename Datatypes::template List<
-                                             typename K::key>>>::Cons>(ps.v());
-          const auto &[x_, gamma] = a0;
-          if (K::key_eq_dec(x_, x)) {
-            _stack.emplace_back(_Resume1{gamma});
-            _stack.emplace_back(_Enter{crane_raw(a1)});
-          } else {
-            _stack.emplace_back(_Enter{crane_raw(a1)});
-          }
-        }
+      typename K::key x) {
+    std::shared_ptr<typename Datatypes::template List<
+        typename Datatypes::template List<typename K::key>>>
+        _head{};
+    std::shared_ptr<typename Datatypes::template List<
+        typename Datatypes::template List<typename K::key>>> *_write = &_head;
+    const typename Datatypes::template List<std::pair<
+        typename K::key, typename Datatypes::template List<typename K::key>>>
+        *_loop_ps = &ps;
+    while (true) {
+      if (std::holds_alternative<typename Datatypes::template List<std::pair<
+              typename K::key,
+              typename Datatypes::template List<typename K::key>>>::Nil>(
+              _loop_ps->v())) {
+        *_write = std::make_shared<typename Datatypes::template List<
+            typename Datatypes::template List<typename K::key>>>(
+            Datatypes::template List<
+                typename Datatypes::template List<typename K::key>>::nil());
+        break;
       } else {
-        auto _f = std::move(std::get<_Resume1>(_frame));
-        _result = Datatypes::template List<typename Datatypes::template List<
-            typename K::key>>::cons(std::move(_f.gamma), std::move(_result));
+        const auto &[a0, a1] =
+            std::get<typename Datatypes::template List<std::pair<
+                typename K::key,
+                typename Datatypes::template List<typename K::key>>>::Cons>(
+                _loop_ps->v());
+        const auto &[x_, gamma] = a0;
+        if (K::key_eq_dec(x_, x)) {
+          auto _cell = std::make_shared<typename Datatypes::template List<
+              typename Datatypes::template List<typename K::key>>>(
+              typename Datatypes::template List<
+                  typename Datatypes::template List<typename K::key>>::
+                  Cons(gamma, nullptr));
+          *_write = std::move(_cell);
+          _write = &std::get<typename Datatypes::template List<
+              typename Datatypes::template List<typename K::key>>::Cons>(
+                        (*_write)->v_mut())
+                        .l;
+          _loop_ps = crane_raw(a1);
+          continue;
+        } else {
+          _loop_ps = crane_raw(a1);
+          continue;
+        }
       }
     }
-    return _result;
+    return std::move(*_head);
   }
 };
 
