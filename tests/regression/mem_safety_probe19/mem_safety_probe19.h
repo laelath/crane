@@ -167,7 +167,7 @@ struct MemSafetyProbe19 {
 
     explicit myopt(Mysome _v) : v_(std::move(_v)) {}
 
-    template <typename _U> explicit myopt(const myopt<_U> &_other) {
+    template <typename _U> myopt(const myopt<_U> &_other) {
       if (std::holds_alternative<typename myopt<_U>::Mynone>(_other.v())) {
         this->v_ = Mynone{};
       } else {

@@ -35,7 +35,7 @@ public:
 
   explicit Trie(Branch _v) : v_(std::move(_v)) {}
 
-  template <typename _U> explicit Trie(const Trie<_U> &_other) {
+  template <typename _U> Trie(const Trie<_U> &_other) {
     if (std::holds_alternative<typename Trie<_U>::Leaf>(_other.v())) {
       this->v_ = Leaf{};
     } else {

@@ -32,7 +32,7 @@ public:
 
   explicit List(Cons _v) : v_(std::move(_v)) {}
 
-  template <typename _U> explicit List(const List<_U> &_other) {
+  template <typename _U> List(const List<_U> &_other) {
     if (std::holds_alternative<typename List<_U>::Nil>(_other.v())) {
       this->v_ = Nil{};
     } else {
@@ -136,7 +136,7 @@ struct NestedInd {
 
     explicit custom_list(Ccons _v) : v_(std::move(_v)) {}
 
-    template <typename _U> explicit custom_list(const custom_list<_U> &_other) {
+    template <typename _U> custom_list(const custom_list<_U> &_other) {
       if (std::holds_alternative<typename custom_list<_U>::Cnil>(_other.v())) {
         this->v_ = Cnil{};
       } else {
@@ -263,7 +263,7 @@ struct NestedInd {
 
     explicit rose(Node _v) : v_(std::move(_v)) {}
 
-    template <typename _U> explicit rose(const rose<_U> &_other) {
+    template <typename _U> rose(const rose<_U> &_other) {
       const auto &[a0, a1] = std::get<typename rose<_U>::Node>(_other.v());
       this->v_ = Node{
           [&]() -> A {

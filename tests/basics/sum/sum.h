@@ -32,7 +32,7 @@ struct Sum {
     explicit either(Right _v) : v_(std::move(_v)) {}
 
     template <typename _U0, typename _U1>
-    explicit either(const either<_U0, _U1> &_other) {
+    either(const either<_U0, _U1> &_other) {
       if (std::holds_alternative<typename either<_U0, _U1>::Left>(_other.v())) {
         const auto &[a0] =
             std::get<typename either<_U0, _U1>::Left>(_other.v());
@@ -206,7 +206,7 @@ struct Sum {
     explicit triple(Third _v) : v_(std::move(_v)) {}
 
     template <typename _U0, typename _U1, typename _U2>
-    explicit triple(const triple<_U0, _U1, _U2> &_other) {
+    triple(const triple<_U0, _U1, _U2> &_other) {
       if (std::holds_alternative<typename triple<_U0, _U1, _U2>::First>(
               _other.v())) {
         const auto &[a0] =

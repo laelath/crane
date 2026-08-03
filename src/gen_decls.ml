@@ -5047,7 +5047,14 @@ let gen_ind_header_v2
                 [(other_id,
                   Tref (Tmod (TMconst, source_ty)))]
               in
-              [(Ftemplate_ctor (tparams, true, ctor_params, body),
+              (* Non-explicit: erased grammar actions produce a [List<std::any>]
+                 that must implicitly recover to the concrete-element list at
+                 return/assignment sites (e.g. [nt_semty] = [list (string *
+                 json_value)]).  An [explicit] converting ctor makes those sites
+                 fail with "no viable conversion".  Element recovery is a guarded
+                 per-element [any_cast], so allowing the implicit conversion is
+                 safe for well-typed extracted code. *)
+              [(Ftemplate_ctor (tparams, false, ctor_params, body),
                 VPublic, SCreators)]
           in
           converting_ctor

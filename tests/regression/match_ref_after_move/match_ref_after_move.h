@@ -35,7 +35,7 @@ struct MatchRefAfterMove {
 
     explicit mylist(Mycons _v) : v_(std::move(_v)) {}
 
-    template <typename _U> explicit mylist(const mylist<_U> &_other) {
+    template <typename _U> mylist(const mylist<_U> &_other) {
       if (std::holds_alternative<typename mylist<_U>::Mynil>(_other.v())) {
         this->v_ = Mynil{};
       } else {
@@ -277,7 +277,7 @@ struct MatchRefAfterMove {
     explicit either(Right _v) : v_(std::move(_v)) {}
 
     template <typename _U0, typename _U1>
-    explicit either(const either<_U0, _U1> &_other) {
+    either(const either<_U0, _U1> &_other) {
       if (std::holds_alternative<typename either<_U0, _U1>::Left>(_other.v())) {
         const auto &[a0] =
             std::get<typename either<_U0, _U1>::Left>(_other.v());

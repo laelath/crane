@@ -73,7 +73,7 @@ struct InductiveInModule {
 
         explicit option(Some _v) : v_(std::move(_v)) {}
 
-        template <typename _U> explicit option(const option<_U> &_other) {
+        template <typename _U> option(const option<_U> &_other) {
           if (std::holds_alternative<typename option<_U>::None>(_other.v())) {
             this->v_ = None{};
           } else {

@@ -365,7 +365,7 @@ struct DeepPattern {
 
     explicit list(Cons _v) : v_(std::move(_v)) {}
 
-    template <typename _U> explicit list(const list<_U> &_other) {
+    template <typename _U> list(const list<_U> &_other) {
       if (std::holds_alternative<typename list<_U>::Nil>(_other.v())) {
         this->v_ = Nil{};
       } else {

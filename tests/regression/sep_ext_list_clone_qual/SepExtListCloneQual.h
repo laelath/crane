@@ -34,7 +34,7 @@ public:
 
   explicit Forest(Node _v) : v_(std::move(_v)) {}
 
-  template <typename _U> explicit Forest(const Forest<_U> &_other) {
+  template <typename _U> Forest(const Forest<_U> &_other) {
     if (std::holds_alternative<typename Forest<_U>::Leaf>(_other.v())) {
       this->v_ = Leaf{};
     } else {

@@ -117,7 +117,7 @@ struct RocqBug13581 {
 
     explicit I(D _v) : v_(std::move(_v)) {}
 
-    template <typename _U> explicit I(const I<_U> &_other) {
+    template <typename _U> I(const I<_U> &_other) {
       if (std::holds_alternative<typename I<_U>::C>(_other.v())) {
         this->v_ = C{};
       } else {
@@ -189,7 +189,7 @@ struct RocqBug13581 {
 
     explicit J(E _v) : v_(std::move(_v)) {}
 
-    template <typename _U> explicit J(const J<_U> &_other) {
+    template <typename _U> J(const J<_U> &_other) {
       const auto &[a0] = std::get<typename J<_U>::E>(_other.v());
       this->v_ = E{a0 ? std::make_shared<RocqBug13581::I<T>>(*a0) : nullptr};
     }

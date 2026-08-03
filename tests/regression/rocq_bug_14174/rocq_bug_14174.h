@@ -86,7 +86,7 @@ public:
 
   explicit Option(None _v) : v_(_v) {}
 
-  template <typename _U> explicit Option(const Option<_U> &_other) {
+  template <typename _U> Option(const Option<_U> &_other) {
     if (std::holds_alternative<typename Option<_U>::Some>(_other.v())) {
       const auto &[a] = std::get<typename Option<_U>::Some>(_other.v());
       this->v_ = Some{[&]() -> A {
@@ -230,7 +230,7 @@ public:
 
   explicit Sumor(Inright _v) : v_(_v) {}
 
-  template <typename _U> explicit Sumor(const Sumor<_U> &_other) {
+  template <typename _U> Sumor(const Sumor<_U> &_other) {
     if (std::holds_alternative<typename Sumor<_U>::Inleft>(_other.v())) {
       const auto &[a0] = std::get<typename Sumor<_U>::Inleft>(_other.v());
       this->v_ = Inleft{[&]() -> A {
@@ -650,7 +650,7 @@ struct RocqBug14174 {
 
       explicit sumor(Inright _v) : v_(_v) {}
 
-      template <typename _U> explicit sumor(const sumor<_U> &_other) {
+      template <typename _U> sumor(const sumor<_U> &_other) {
         if (std::holds_alternative<typename sumor<_U>::Inleft>(_other.v())) {
           const auto &[a0] = std::get<typename sumor<_U>::Inleft>(_other.v());
           this->v_ = Inleft{[&]() -> A {

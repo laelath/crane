@@ -30,8 +30,7 @@ public:
 
   explicit Sum(Inr _v) : v_(std::move(_v)) {}
 
-  template <typename _U0, typename _U1>
-  explicit Sum(const Sum<_U0, _U1> &_other) {
+  template <typename _U0, typename _U1> Sum(const Sum<_U0, _U1> &_other) {
     if (std::holds_alternative<typename Sum<_U0, _U1>::Inl>(_other.v())) {
       const auto &[a0] = std::get<typename Sum<_U0, _U1>::Inl>(_other.v());
       this->v_ = Inl{[&]() -> A {

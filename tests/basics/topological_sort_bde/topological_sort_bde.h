@@ -43,7 +43,7 @@ public:
   List() {}
   explicit List(Nil _v) : d_v_(_v) {}
   explicit List(Cons _v) : d_v_(bsl::move(_v)) {}
-  template <typename _U> explicit List(const List<_U> &_other) {
+  template <typename _U> List(const List<_U> &_other) {
     if (bsl::holds_alternative<typename List<_U>::Nil>(_other.v())) {
       this->d_v_ = Nil{};
     } else {

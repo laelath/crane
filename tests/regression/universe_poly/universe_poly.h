@@ -31,7 +31,7 @@ public:
 
   explicit List(Cons _v) : v_(std::move(_v)) {}
 
-  template <typename _U> explicit List(const List<_U> &_other) {
+  template <typename _U> List(const List<_U> &_other) {
     if (std::holds_alternative<typename List<_U>::Nil>(_other.v())) {
       this->v_ = Nil{};
     } else {
@@ -140,7 +140,7 @@ struct UniversePoly {
 
     explicit poption(Psome _v) : v_(std::move(_v)) {}
 
-    template <typename _U> explicit poption(const poption<_U> &_other) {
+    template <typename _U> poption(const poption<_U> &_other) {
       if (std::holds_alternative<typename poption<_U>::Pnone>(_other.v())) {
         this->v_ = Pnone{};
       } else {

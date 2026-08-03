@@ -33,7 +33,7 @@ public:
 
   explicit List(Cons _v) : v_(std::move(_v)) {}
 
-  template <typename _U> explicit List(const List<_U> &_other) {
+  template <typename _U> List(const List<_U> &_other) {
     if (std::holds_alternative<typename List<_U>::Nil>(_other.v())) {
       this->v_ = Nil{};
     } else {
@@ -240,7 +240,7 @@ struct Cotree {
 
     explicit tree(Node _v) : v_(std::move(_v)) {}
 
-    template <typename _U> explicit tree(const tree<_U> &_other) {
+    template <typename _U> tree(const tree<_U> &_other) {
       const auto &[a, children] = std::get<typename tree<_U>::Node>(_other.v());
       this->v_ = Node{
           [&]() -> A {

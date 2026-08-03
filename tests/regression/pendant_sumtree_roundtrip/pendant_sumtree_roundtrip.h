@@ -34,7 +34,7 @@ public:
 
   explicit List(Cons0 _v) : v_(std::move(_v)) {}
 
-  template <typename _U> explicit List(const List<_U> &_other) {
+  template <typename _U> List(const List<_U> &_other) {
     if (std::holds_alternative<typename List<_U>::Nil0>(_other.v())) {
       this->v_ = Nil0{};
     } else {
@@ -213,7 +213,7 @@ public:
 
   explicit T0(Cons _v) : v_(std::move(_v)) {}
 
-  template <typename _U> explicit T0(const T0<_U> &_other) {
+  template <typename _U> T0(const T0<_U> &_other) {
     if (std::holds_alternative<typename T0<_U>::Nil>(_other.v())) {
       this->v_ = Nil{};
     } else {

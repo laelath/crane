@@ -99,7 +99,7 @@ struct PolyInductive {
 
     explicit pmaybe(PJust _v) : v_(std::move(_v)) {}
 
-    template <typename _U> explicit pmaybe(const pmaybe<_U> &_other) {
+    template <typename _U> pmaybe(const pmaybe<_U> &_other) {
       if (std::holds_alternative<typename pmaybe<_U>::PNothing>(_other.v())) {
         this->v_ = PNothing{};
       } else {
@@ -214,7 +214,7 @@ struct PolyInductive {
 
     explicit ptree(PNode _v) : v_(std::move(_v)) {}
 
-    template <typename _U> explicit ptree(const ptree<_U> &_other) {
+    template <typename _U> ptree(const ptree<_U> &_other) {
       if (std::holds_alternative<typename ptree<_U>::PLeaf>(_other.v())) {
         const auto &[a0] = std::get<typename ptree<_U>::PLeaf>(_other.v());
         this->v_ = PLeaf{[&]() -> A {

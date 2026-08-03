@@ -35,7 +35,7 @@ public:
 
   explicit MyList(Mycons _v) : v_(std::move(_v)) {}
 
-  template <typename _U> explicit MyList(const MyList<_U> &_other) {
+  template <typename _U> MyList(const MyList<_U> &_other) {
     if (std::holds_alternative<typename MyList<_U>::Mynil>(_other.v())) {
       this->v_ = Mynil{};
     } else {

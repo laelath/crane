@@ -34,7 +34,7 @@ struct ClosureEscapeMatch {
 
     explicit mylist(Mycons _v) : v_(std::move(_v)) {}
 
-    template <typename _U> explicit mylist(const mylist<_U> &_other) {
+    template <typename _U> mylist(const mylist<_U> &_other) {
       if (std::holds_alternative<typename mylist<_U>::Mynil>(_other.v())) {
         this->v_ = Mynil{};
       } else {

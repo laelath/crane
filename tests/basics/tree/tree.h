@@ -108,7 +108,7 @@ public:
 
   explicit List(Cons _v) : v_(std::move(_v)) {}
 
-  template <typename _U> explicit List(const List<_U> &_other) {
+  template <typename _U> List(const List<_U> &_other) {
     if (std::holds_alternative<typename List<_U>::Nil>(_other.v())) {
       this->v_ = Nil{};
     } else {
@@ -214,7 +214,7 @@ public:
 
   explicit Tree(Node _v) : v_(std::move(_v)) {}
 
-  template <typename _U> explicit Tree(const Tree<_U> &_other) {
+  template <typename _U> Tree(const Tree<_U> &_other) {
     if (std::holds_alternative<typename Tree<_U>::Leaf>(_other.v())) {
       this->v_ = Leaf{};
     } else {

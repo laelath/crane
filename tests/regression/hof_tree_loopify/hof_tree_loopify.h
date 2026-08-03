@@ -34,7 +34,7 @@ struct HofTreeLoopify {
 
     explicit tree(Node _v) : v_(std::move(_v)) {}
 
-    template <typename _U> explicit tree(const tree<_U> &_other) {
+    template <typename _U> tree(const tree<_U> &_other) {
       if (std::holds_alternative<typename tree<_U>::Leaf>(_other.v())) {
         this->v_ = Leaf{};
       } else {

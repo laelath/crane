@@ -41,7 +41,7 @@ struct HigherKinded {
 
     explicit Tree(Branch _v) : v_(std::move(_v)) {}
 
-    template <typename _U> explicit Tree(const Tree<_U> &_other) {
+    template <typename _U> Tree(const Tree<_U> &_other) {
       if (std::holds_alternative<typename Tree<_U>::Leaf>(_other.v())) {
         const auto &[a0] = std::get<typename Tree<_U>::Leaf>(_other.v());
         this->v_ = Leaf{[&]() -> A {

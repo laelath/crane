@@ -33,7 +33,7 @@ struct RecRecord {
 
     explicit rlist(Rcons _v) : v_(std::move(_v)) {}
 
-    template <typename _U> explicit rlist(const rlist<_U> &_other) {
+    template <typename _U> rlist(const rlist<_U> &_other) {
       if (std::holds_alternative<typename rlist<_U>::Rnil>(_other.v())) {
         this->v_ = Rnil{};
       } else {

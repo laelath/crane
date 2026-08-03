@@ -38,7 +38,7 @@ struct MutualRecursion {
 
     explicit tree(Node _v) : v_(std::move(_v)) {}
 
-    template <typename _U> explicit tree(const tree<_U> &_other) {
+    template <typename _U> tree(const tree<_U> &_other) {
       if (std::holds_alternative<typename tree<_U>::Leaf>(_other.v())) {
         const auto &[a0] = std::get<typename tree<_U>::Leaf>(_other.v());
         this->v_ = Leaf{[&]() -> A {
@@ -148,7 +148,7 @@ struct MutualRecursion {
 
     explicit forest(Trees _v) : v_(std::move(_v)) {}
 
-    template <typename _U> explicit forest(const forest<_U> &_other) {
+    template <typename _U> forest(const forest<_U> &_other) {
       if (std::holds_alternative<typename forest<_U>::Empty>(_other.v())) {
         this->v_ = Empty{};
       } else {

@@ -39,7 +39,7 @@ template <S X> struct HashTrie {
 
     explicit Trie(Node _v) : v_(std::move(_v)) {}
 
-    template <typename _U> explicit Trie(const Trie<_U> &_other) {
+    template <typename _U> Trie(const Trie<_U> &_other) {
       if (std::holds_alternative<typename Trie<_U>::Empty>(_other.v())) {
         this->v_ = Empty{};
       } else {
