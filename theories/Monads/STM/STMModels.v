@@ -38,14 +38,14 @@ Section transaction_sim.
 
 Context {E F : Type -> Type} {Si Sm X : Type}.
 
-Context (i : E ~> stateT Sm (itree G)).
+Context (i : E ~> stateT Sm (itree void1)).
 (* i is the specification handler for shared state events *)
 
 Context (h : transactionE E ~> itree F).
 (* h takes transactions with state events E and translates them into events F
    that are interleaved with other transactions. *)
 
-Context (g : F ~> stateT Si (itree H)).
+Context (g : F ~> stateT Si (itree void1)).
 (* g translates F events into operations on the implementation state. *)
 
 Context (HS : Si -> Sm -> Prop).
@@ -78,10 +78,6 @@ Variant transaction_move : transaction_event -> hrel (Si * list transaction_impl
     t ≅ Vis e k ->
     g _ e s ≈ Ret (s', r) ->
     transaction_move TransEvStep (s, ts1 ++ [TI t] ++ ts2) (s', ts1 ++ [TI (k r)] ++ ts2)
-| TransMoveVis {R T} (t : itree F (option R)) (r : T) (e : F T) (k : T -> itree F (option R)) s s' ts1 ts2 :
-    t ≅ Vis e k ->
-    g _ e s ≈ Vis e' k' ->
-    transaction_move TransEvError (s, ts1 ++ [TI t] ++ ts2) (s', ts1 ++ [TI (k r)] ++ ts2)
 | TransMoveNewTransaction {R} (t : itree E (option R)) (s : Si) (ts : list transaction_impl) :
     transaction_move (TransEvNew t) (s, ts) (s, TI (h _ (Transaction t)) :: ts)
 .
@@ -105,7 +101,7 @@ Variant trans_response (sim : (Sm * list transaction_state) -> Prop) : transacti
 Program Definition transactionalb : mon ((Si * list transaction_impl) -> (Sm * list transaction_state) -> Prop) :=
   {| body R s1 s2 := forall ev s1', transaction_move ev s1 s1' -> exists s2', trans_move ^* s2 s2' /\ trans_response (R s1') ev s2' |}.
 Next Obligation.
-  apply H1 in H2 as [s2' [Hmoves Hresponse]].
+  apply H0 in H1 as [s2' [Hmoves Hresponse]].
   exists s2'.
   split; [assumption|].
   destruct Hresponse; constructor; auto.

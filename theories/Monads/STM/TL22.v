@@ -1,5 +1,5 @@
 From Corelib Require Import PrimString.
-From Crane.Monads Require Import ITree STMDefs STM.TransactionDefs STM.ForkDefs STM.Error.
+From Crane.Monads Require Import ITree STMDefs2 STM.TransactionDefs STM.ForkDefs STM.Error.
 From Crane.Utils Require Import HMap HAList Mergesort.
 
 From Stdlib Require Import Arith.PeanoNat Bool.Bool Classes.EquivDec List.
@@ -14,32 +14,29 @@ Import Basics.Monads.
 
 
 
-Variant tl2E {K} (V : K -> Type) : Type -> Type :=
-| GetVersionClock : tl2E V nat
-| IncVersionClock : tl2E V nat
-| NewTVarTL2 : forall (k : K), V k -> tl2E V (TVar V (V k))
-| ReadTVarTL2 : forall {A}, TVar V A -> tl2E V (A * nat * bool)
-| WriteTVarTL2 : forall {A}, TVar V A -> A -> nat -> bool -> tl2E V unit
-| TryLockTVar : forall {A}, TVar V A -> tl2E V bool
-| UnlockTVar : forall {A}, TVar V A -> tl2E V unit.
-
-Arguments GetVersionClock {K} {V}.
-Arguments IncVersionClock {K} {V}.
-Arguments NewTVarTL2 {K} {V} (_ _).
-Arguments ReadTVarTL2 {K} {V} {A} (_).
-Arguments WriteTVarTL2 {K} {V} {A} (_ _ _ _).
-Arguments TryLockTVar {K} {V} {A} (_).
-Arguments UnlockTVar {K} {V} {A} (_).
+Variant tl2E : Type -> Type :=
+| GetVersionClock : tl2E nat
+| IncVersionClock : tl2E nat
+| NewTVarTL2 : forall {A}, A -> tl2E (TVar A)
+| ReadTVarTL2 : forall {A}, TVar A -> tl2E (A * nat * bool)
+| WriteTVarTL2 : forall {A}, TVar A -> A -> nat -> bool -> tl2E unit
+| TryLockTVar : forall {A}, TVar A -> tl2E bool
+| UnlockTVar : forall {A}, TVar A -> tl2E unit.
 
 
 
 (* a blocking spinlock *)
-Definition spinlock_tvar {K} {V : K -> Type} {E} `{tl2E V -< E} {A} (x : TVar V A) : itree E unit :=
+Definition spinlock_tvar {E} `{tl2E -< E} {A} (x : TVar A) : itree E unit :=
   ITree.iter (fun _ => b <- trigger (TryLockTVar x) ;; if (b : bool) then Ret (inr tt) else Ret (inl tt)) tt.
 
 
-(* need to make the state track allocations *)
-Definition handle_tvar_log_tl2 {K} {V : K -> Type} {M} `{HMap (pkey K nat) (pkey_type V) M} {E} `{H : tl2E V -< E}
+Variant cell A :=
+| Empty
+| Reserved
+| Value (a : A).
+
+
+Definition handle_tvar_log_tl2 {E} `{H : tl2E -< E}
   (rv : nat) : stmE V ~> stateT (list (pkey K nat) * M) (failT (itree E)) :=
   fun _ t '(s_r, m_w) =>
     match t with
