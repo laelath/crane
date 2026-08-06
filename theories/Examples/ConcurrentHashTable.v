@@ -69,16 +69,14 @@ Fixpoint assoc_remove
 Record CHT := {
   cht_eqb     : K -> K -> bool;
   cht_hash    : K -> nat;
-  cht_nbuckets: nat;
   cht_buckets : list (TVar (list (K * V)));
   cht_fallback : TVar (list (K * V));
-  cht_buckets_wf : length cht_buckets = cht_nbuckets
 }.
 
 (* Total bucket selection *)
 Definition bucket_of (t : CHT) (k : K)
   :  TVar (list (K * V)) :=
-  let i := modulo (t.(cht_hash) k) t.(cht_nbuckets) in
+  let i := modulo (t.(cht_hash) k) (length t.(cht_buckets)) in
   nth i t.(cht_buckets) t.(cht_fallback).
 
 Section STM.
@@ -219,12 +217,12 @@ Arguments with_post {E R P} (t pf).
 
 Notation with_post_ P t pf :=
   (let ot := observe t in
-  let pf' := has_post_eta pf in
-  (match ot return ot = observe t -> _ with
-  | RetF r => fun Heqot => Ret (exist P r (has_post_inv_Ret (eq_ind_r (fun ot => has_post (go ot) P) pf' Heqot)))
-  | TauF t => fun Heqot => Tau (@with_post _ _ P t (has_post_inv_Tau (eq_ind_r (fun ot => has_post (go ot) P) pf' Heqot)))
-  | VisF e k => fun Heqot => Vis e (fun x => @with_post _ _ P (k x) (has_post_inv_Vis (eq_ind_r (fun ot => has_post (go ot) P) pf' Heqot) x))
-  end) eq_refl).
+   let pf' := has_post_eta pf in
+   (match ot return ot = observe t -> _ with
+    | RetF r => fun Heqot => Ret (exist P r (has_post_inv_Ret (eq_ind_r (fun ot => has_post (go ot) P) pf' Heqot)))
+    | TauF t => fun Heqot => Tau (@with_post _ _ P t (has_post_inv_Tau (eq_ind_r (fun ot => has_post (go ot) P) pf' Heqot)))
+    | VisF e k => fun Heqot => Vis e (fun x => @with_post _ _ P (k x) (has_post_inv_Vis (eq_ind_r (fun ot => has_post (go ot) P) pf' Heqot) x))
+    end) eq_refl).
 
 
 
@@ -238,15 +236,6 @@ Qed.
 Lemma with_post_proj1 {E R} {P : R -> Prop} (t : itree E R) (pf : has_post t P) :
   ITree.map (@proj1_sig R P) (with_post t pf) ≅ t.
 Proof.
-  revert t pf.
-  unfold ITree.map.
-  ginit.
-  gcofix CIH.
-  intros.
-  rewrite unfold_with_post.
-  gstep.
-  generalize (observe t).
-  red in pf.
 Abort.
 
 
@@ -255,28 +244,26 @@ Definition new_hash
            (eqb : K -> K -> bool) (hash : K -> nat) (requested : nat)
   : itree runStmIOE CHT :=
   let n := max requested 1 in
-  '(exist _ buckets Hbuckets) <- with_post (mk_buckets n) (mk_buckets_length n) ;;
-  _.
-(*
-  fallback <- get bs 0 ;;
+  buckets <- mk_buckets (n - 1) ;;
+  fallback <- atomically (newTVar tt []) ;;
   Ret {| cht_eqb := eqb; cht_hash := hash;
-         cht_buckets := bs; cht_nbuckets := n; cht_fallback := b |}.
-*)
+         cht_buckets := fallback :: buckets;
+         cht_fallback := fallback |}.
 
-Definition put  {K V} (t : CHT K V) (k : K) (v : V) : itree ioE unit :=
+Definition put  (t : CHT) (k : K) (v : V) : itree runStmIOE unit :=
   atomically (stm_put t k v).
 
-Definition get  {K V} (t : CHT K V) (k : K) : itree ioE (option V) :=
+Definition get  (t : CHT) (k : K) : itree runStmIOE (option V) :=
   atomically (stm_get t k).
 
-Definition hash_delete {K V} (t : CHT K V) (k : K) : itree ioE (option V) :=
+Definition hash_delete (t : CHT) (k : K) : itree runStmIOE (option V) :=
   atomically (stm_delete t k).
 
-Definition hash_update {K V}
-           (t : CHT K V) (k : K) (f : option V -> V) : itree ioE V :=
+Definition hash_update
+           (t : CHT) (k : K) (f : option V -> V) : itree runStmIOE V :=
   atomically (stm_update t k f).
 
-Definition get_or {K V} (t : CHT K V) (k : K) (dflt : V) : itree ioE V :=
+Definition get_or (t : CHT) (k : K) (dflt : V) : itree runStmIOE V :=
   atomically (stm_get_or t k dflt).
 
 End key_val.

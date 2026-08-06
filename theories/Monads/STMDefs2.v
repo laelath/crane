@@ -91,6 +91,7 @@ Crane Extract Inlined Constant newTVar => "stm::newTVar(%a1)".
 
 
 
+From Stdlib Require Import JMeq.
 From ITree Require Import Basics.Basics.
 
 Import Basics.Monads.
@@ -99,7 +100,7 @@ Variant h_tvarE_spec : forall A, tvarE A -> (TVar ~> option) -> A -> (TVar ~> op
 | h_NewTVar {A} (a : A) (x : TVar A) s1 s2 :
     s1 _ x = None ->
     s2 _ x = Some a ->
-    (* s2 is the same as s1 except for x *) True ->
+    (forall B (y : TVar B), ~(JMeq x y) -> s1 _ y = s2 _ y) ->
     h_tvarE_spec (TVar A) (NewTVar a) s1 x s2
 | h_ReadTVar {A} (x : TVar A) (a : A) s :
     s _ x = Some a ->
@@ -107,7 +108,7 @@ Variant h_tvarE_spec : forall A, tvarE A -> (TVar ~> option) -> A -> (TVar ~> op
 | h_WriteTVar {A} (x : TVar A) (a b : A) s1 s2 :
     s1 _ x = Some b ->
     s2 _ x = Some a ->
-    (* s2 is the same as s1 except for x *) True ->
+    (forall B (y : TVar B), ~(JMeq x y) -> s1 _ y = s2 _ y) ->
     h_tvarE_spec unit (WriteTVar x a) s1 tt s2.
 
 Variant interp_state_specF {E F S} (h : forall A, E A -> S -> A -> S -> Prop) {A}

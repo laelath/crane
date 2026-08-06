@@ -15,7 +15,7 @@ Definition h_atomic_transactions : transactionE stmE ~> atomicE tvarE :=
   fun _ e =>
     match e with
     | Transaction t =>
-        let m : stateT (halist (pkey K nat) (pkey_type V)) (failT (itree (tvarE V))) _ :=
+        let m : stateT (TVar ~> option) (failT (itree tvarE)) _ :=
           interp h_stm_write_log t in
         Atomic (res <- m [] ;;
                 match res with
