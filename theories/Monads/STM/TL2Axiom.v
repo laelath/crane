@@ -1,5 +1,5 @@
 From Corelib Require Import PrimString.
-From Crane.Monads Require Import ITree STMDefs2 STM.TransactionDefs STM.ForkDefs STM.Error.
+From Crane.Monads Require Import ITree STMDefsAxiom STM.TransactionDefs STM.ForkDefs STM.Error.
 From Crane.Utils Require Import HMap HAList Mergesort.
 
 From Stdlib Require Import Arith.PeanoNat Bool.Bool Classes.EquivDec List.

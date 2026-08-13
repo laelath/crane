@@ -9,6 +9,7 @@
    re-export this module and add flavor-specific C++ extraction mappings.
 *)
 From Corelib Require Import PrimString.
+From Stdlib Require Import NArith Program.Equality.
 From Crane Require Extraction.
 From Crane Require Import Monads.ITree.
 
@@ -17,6 +18,38 @@ From ITree Require Import Basics.Basics.
 Open Scope itree_scope.
 
 Axiom TVar : Type -> Type.
+Axiom N_of_TVar : forall {A}, TVar A -> N.
+Axiom N_of_TVar_unique : forall {A B} (a : TVar A) (b : TVar B), N_of_TVar a = N_of_TVar b <-> JMeq a b.
+
+Definition tvar_eqb {A B} (a : TVar A) (b : TVar B) : bool :=
+  N.eqb (N_of_TVar a) (N_of_TVar b).
+
+Lemma tvar_eqb_true {A B} (a : TVar A) (b : TVar B) :
+  tvar_eqb a b = true <-> JMeq a b.
+Proof.
+  split.
+  - intros H.
+    apply N_of_TVar_unique, N.eqb_eq, H.
+  - intros H.
+    apply N.eqb_eq, N_of_TVar_unique, H.
+Qed.
+
+Lemma tvar_eqb_false {A B} (a : TVar A) (b : TVar B) :
+  tvar_eqb a b = false <-> ~ JMeq a b.
+Proof.
+  split.
+  - intros H Heq.
+    apply tvar_eqb_true in Heq.
+    rewrite Heq in H.
+    discriminate.
+  - intros Hneq.
+    destruct (tvar_eqb a b) eqn:E.
+    + exfalso.
+      apply Hneq, tvar_eqb_true, E.
+    + reflexivity.
+Qed.
+
+
 
 Inductive tvarE : Type -> Type :=
 | NewTVar : forall {A}, A -> tvarE (TVar A)
@@ -91,6 +124,7 @@ Crane Extract Inlined Constant newTVar => "stm::newTVar(%a1)".
 
 
 
+(*
 From Stdlib Require Import JMeq.
 From ITree Require Import Basics.Basics.
 
@@ -211,3 +245,4 @@ Proof.
   unfold interp_state_spec.
   apply gfp_prop, interp_state_spec_cong_eqit_chain.
 Qed.
+*)

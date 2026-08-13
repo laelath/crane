@@ -17,7 +17,9 @@ Import Basics.Monads.
 Variant tl2E {K} (V : K -> Type) : Type -> Type :=
 | GetVersionClock : tl2E V nat
 | IncVersionClock : tl2E V nat
-| NewTVarTL2 : forall (k : K), V k -> tl2E V (TVar V (V k))
+| NewTVarTL2 : forall (k : K), tl2E V (TVar V (V k))
+| CommitNewTVarTL2 : forall {A}, TVar V A -> A -> tl2E V unit
+| AbortNewTVarTL2 : forall {A}, TVar V A -> tl2E V unit
 | ReadTVarTL2 : forall {A}, TVar V A -> tl2E V (A * nat * bool)
 | WriteTVarTL2 : forall {A}, TVar V A -> A -> nat -> bool -> tl2E V unit
 | TryLockTVar : forall {A}, TVar V A -> tl2E V bool
@@ -25,7 +27,9 @@ Variant tl2E {K} (V : K -> Type) : Type -> Type :=
 
 Arguments GetVersionClock {K} {V}.
 Arguments IncVersionClock {K} {V}.
-Arguments NewTVarTL2 {K} {V} (_ _).
+Arguments NewTVarTL2 {K} {V} (_).
+Arguments CommitNewTVarTL2 {K} {V} {A} (_ _).
+Arguments AbortNewTVarTL2 {K} {V} {A} (_).
 Arguments ReadTVarTL2 {K} {V} {A} (_).
 Arguments WriteTVarTL2 {K} {V} {A} (_ _ _ _).
 Arguments TryLockTVar {K} {V} {A} (_).
@@ -37,27 +41,36 @@ Arguments UnlockTVar {K} {V} {A} (_).
 Definition spinlock_tvar {K} {V : K -> Type} {E} `{tl2E V -< E} {A} (x : TVar V A) : itree E unit :=
   ITree.iter (fun _ => b <- trigger (TryLockTVar x) ;; if (b : bool) then Ret (inr tt) else Ret (inl tt)) tt.
 
+Print pkey_type.
 
-(* need to make the state track allocations *)
-Definition handle_tvar_log_tl2 {K} {V : K -> Type} {M} `{HMap (pkey K nat) (pkey_type V) M} {E} `{H : tl2E V -< E}
+(* TODO: need to make the state track allocations *)
+(* requires changing the type that the HMap stores to be a function that produces a pair of a boolean and V k *)
+(* this function and future parts of this file are currently broken *)
+(* It it probably more worthwile to continue the switch over to the axiomitized versions however. *)
+Definition handle_tvar_log_tl2 {K} {V : K -> Type} {M} `{HMap (pkey K nat) (fun pk => bool * V (fst pk))%type M} {E} `{H : tl2E V -< E}
   (rv : nat) : stmE V ~> stateT (list (pkey K nat) * M) (failT (itree E)) :=
   fun _ t '(s_r, m_w) =>
     match t with
     | inl1 Retry => Ret None
     | inr1 e =>
       match e with
-      | NewTVar k v => Vis (subevent (H := H) _ (NewTVarTL2 k v)) (fun tv => Ret (Some ((s_r, m_w), tv)))
+      | NewTVar k v => Vis (subevent (H := H) _ (NewTVarTL2 k))
+                           (fun tv =>
+                              let '(mk_tvar _ n k) := tv in
+                              Ret (Some ((s_r, add (k, n) (true, v) m_w), tv)))
       | ReadTVar tv =>
           (let '(mk_tvar _ n k) in TVar _ T := tv return TVar V T -> itree E (option ((list (pkey K nat) * M) * T)) in
             match lookup (k, n) m_w with
-            | Some v => fun _ => Ret (Some ((s_r, m_w), v))
+            | Some (_, v) => fun _ => Ret (Some ((s_r, m_w), v))
             | None => fun tv =>
                 '(v, ver, l) <- Vis (subevent (H := H) _ (ReadTVarTL2 tv)) (fun x => Ret x);;
                 if l || (rv <? ver)
                 then Ret None
                 else Ret (Some (((k, n) :: s_r, m_w), v))
             end) tv
-      | WriteTVar (mk_tvar _ n k) v => Ret (Some ((s_r, add (k, n) v m_w), tt))
+      | WriteTVar (mk_tvar _ n k) v =>
+          (* this branch needs to be modified so that updates preserve whether it was a new allocation or not *)
+          Ret (Some ((s_r, add (k, n) v m_w), tt))
       end
     end.
 
